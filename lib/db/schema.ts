@@ -168,3 +168,24 @@ export const stream = pgTable(
 );
 
 export type Stream = InferSelectModel<typeof stream>;
+
+export const userSettings = pgTable(
+  'UserSettings',
+  {
+    id: uuid('id').primaryKey().notNull().defaultRandom(),
+    userId: uuid('userId')
+      .notNull()
+      .references(() => user.id),
+    googleSheetsUrl: text('googleSheetsUrl'),
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+  },
+  (table) => ({
+    userRef: foreignKey({
+      columns: [table.userId],
+      foreignColumns: [user.id],
+    }),
+  }),
+);
+
+export type UserSettings = InferSelectModel<typeof userSettings>;

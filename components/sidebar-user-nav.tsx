@@ -5,6 +5,7 @@ import Image from 'next/image';
 import type { User } from 'next-auth';
 import { signOut, useSession } from 'next-auth/react';
 import { useTheme } from 'next-themes';
+import Link from 'next/link';
 
 import {
   DropdownMenu,
@@ -74,9 +75,16 @@ export function SidebarUserNav({ user }: { user: User }) {
             <DropdownMenuItem
               data-testid="user-nav-item-theme"
               className="cursor-pointer"
-              onSelect={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+              onSelect={() =>
+                setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')
+              }
             >
               {`Toggle ${resolvedTheme === 'light' ? 'dark' : 'light'} mode`}
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/settings" className="cursor-pointer">
+                Settings
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild data-testid="user-nav-item-auth">

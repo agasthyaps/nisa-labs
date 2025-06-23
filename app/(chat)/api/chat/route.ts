@@ -11,7 +11,6 @@ import {
   createStreamId,
   deleteChatById,
   getChatById,
-  getMessageCountByUserId,
   getMessagesByChatId,
   getStreamIdsByChatId,
   saveChat,
@@ -25,7 +24,6 @@ import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
 import { getWeather } from '@/lib/ai/tools/get-weather';
 import { isProductionEnvironment } from '@/lib/constants';
 import { myProvider } from '@/lib/ai/providers';
-import { entitlementsByUserType } from '@/lib/ai/entitlements';
 import { postRequestBodySchema, type PostRequestBody } from './schema';
 import { geolocation } from '@vercel/functions';
 import {
@@ -36,6 +34,13 @@ import { after } from 'next/server';
 import type { Chat } from '@/lib/db/schema';
 import { differenceInSeconds } from 'date-fns';
 import { ChatSDKError } from '@/lib/errors';
+import {
+  readGoogleSheet,
+  writeGoogleSheet,
+  addNewDecisionLog,
+  readDecisionLog,
+  // appendGoogleSheet,
+} from '@/lib/ai/tools/google-sheets';
 
 export const maxDuration = 60;
 
@@ -83,14 +88,14 @@ export async function POST(request: Request) {
 
     const userType: UserType = session.user.type;
 
-    const messageCount = await getMessageCountByUserId({
-      id: session.user.id,
-      differenceInHours: 24,
-    });
+    // const messageCount = await getMessageCountByUserId({
+    //   id: session.user.id,
+    //   differenceInHours: 24,
+    // });
 
-    if (messageCount > entitlementsByUserType[userType].maxMessagesPerDay) {
-      return new ChatSDKError('rate_limit:chat').toResponse();
-    }
+    // if (messageCount > entitlementsByUserType[userType].maxMessagesPerDay) {
+    //   return new ChatSDKError('rate_limit:chat').toResponse();
+    // }
 
     const chat = await getChatById({ id });
 
@@ -159,6 +164,11 @@ export async function POST(request: Request) {
                   'createDocument',
                   'updateDocument',
                   'requestSuggestions',
+                  'readGoogleSheet',
+                  'writeGoogleSheet',
+                  'addNewDecisionLog',
+                  'readDecisionLog',
+                  // 'appendGoogleSheet',
                 ],
           experimental_transform: smoothStream({ chunking: 'word' }),
           experimental_generateMessageId: generateUUID,
@@ -170,6 +180,11 @@ export async function POST(request: Request) {
               session,
               dataStream,
             }),
+            readGoogleSheet: readGoogleSheet({ session }),
+            writeGoogleSheet: writeGoogleSheet({ session }),
+            addNewDecisionLog: addNewDecisionLog({ session }),
+            readDecisionLog: readDecisionLog({ session }),
+            // appendGoogleSheet: appendGoogleSheet({ session }),
           },
           onFinish: async ({ response }) => {
             if (session.user?.id) {
@@ -283,7 +298,7 @@ export async function GET(request: Request) {
     return new ChatSDKError('not_found:stream').toResponse();
   }
 
-  const recentStreamId = streamIds.at(-1);
+  const recentStreamId = streamIds.at(-1)?.id;
 
   if (!recentStreamId) {
     return new ChatSDKError('not_found:stream').toResponse();

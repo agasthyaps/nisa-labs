@@ -11,6 +11,7 @@ import { Markdown } from './markdown';
 import { MessageActions } from './message-actions';
 import { PreviewAttachment } from './preview-attachment';
 import { Weather } from './weather';
+import { GoogleSheetsResult } from './google-sheets-result';
 import equal from 'fast-deep-equal';
 import { cn, sanitizeText } from '@/lib/utils';
 import { Button } from './ui/button';
@@ -183,6 +184,17 @@ const PurePreviewMessage = ({
                           args={args}
                           isReadonly={isReadonly}
                         />
+                      ) : toolName === 'readGoogleSheet' ||
+                        toolName === 'writeGoogleSheet' ||
+                        toolName === 'appendGoogleSheet' ? (
+                        <div className="text-sm text-muted-foreground">
+                          {toolName === 'readGoogleSheet' &&
+                            'Reading from Google Sheet...'}
+                          {toolName === 'writeGoogleSheet' &&
+                            'Writing to Google Sheet...'}
+                          {toolName === 'appendGoogleSheet' &&
+                            'Appending to Google Sheet...'}
+                        </div>
                       ) : null}
                     </div>
                   );
@@ -212,6 +224,10 @@ const PurePreviewMessage = ({
                           result={result}
                           isReadonly={isReadonly}
                         />
+                      ) : toolName === 'readGoogleSheet' ||
+                        toolName === 'writeGoogleSheet' ||
+                        toolName === 'appendGoogleSheet' ? (
+                        <GoogleSheetsResult result={result} />
                       ) : (
                         <pre>{JSON.stringify(result, null, 2)}</pre>
                       )}

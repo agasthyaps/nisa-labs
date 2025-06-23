@@ -27,6 +27,7 @@ import {
   type DBMessage,
   type Chat,
   stream,
+  userSettings,
 } from './schema';
 import type { ArtifactKind } from '@/components/artifact';
 import { generateUUID } from '../utils';
@@ -521,18 +522,68 @@ export async function createStreamId({
 
 export async function getStreamIdsByChatId({ chatId }: { chatId: string }) {
   try {
-    const streamIds = await db
-      .select({ id: stream.id })
+    return await db
+      .select()
       .from(stream)
       .where(eq(stream.chatId, chatId))
-      .orderBy(asc(stream.createdAt))
-      .execute();
-
-    return streamIds.map(({ id }) => id);
+      .orderBy(asc(stream.createdAt));
   } catch (error) {
     throw new ChatSDKError(
       'bad_request:database',
       'Failed to get stream ids by chat id',
+    );
+  }
+}
+
+export async function getUserSettings({ userId }: { userId: string }) {
+  try {
+    const [settings] = await db
+      .select()
+      .from(userSettings)
+      .where(eq(userSettings.userId, userId))
+      .limit(1);
+
+    return settings;
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to get user settings',
+    );
+  }
+}
+
+export async function saveUserSettings({
+  userId,
+  googleSheetsUrl,
+}: {
+  userId: string;
+  googleSheetsUrl?: string;
+}) {
+  try {
+    const existingSettings = await getUserSettings({ userId });
+
+    if (existingSettings) {
+      return await db
+        .update(userSettings)
+        .set({
+          googleSheetsUrl,
+          updatedAt: new Date(),
+        })
+        .where(eq(userSettings.userId, userId))
+        .returning();
+    } else {
+      return await db
+        .insert(userSettings)
+        .values({
+          userId,
+          googleSheetsUrl,
+        })
+        .returning();
+    }
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to save user settings',
     );
   }
 }
