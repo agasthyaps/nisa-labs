@@ -17,6 +17,7 @@ export default function Page() {
   const [email, setEmail] = useState('');
   const [isSuccessful, setIsSuccessful] = useState(false);
   const [state, setState] = useState<RegisterActionState>({ status: 'idle' });
+  const [hasRedirected, setHasRedirected] = useState(false);
 
   const { update: updateSession } = useSession();
 
@@ -30,14 +31,23 @@ export default function Page() {
         type: 'error',
         description: 'Failed validating your submission!',
       });
-    } else if (state.status === 'success') {
+    } else if (state.status === 'success' && !hasRedirected) {
       toast({ type: 'success', description: 'Account created successfully!' });
 
       setIsSuccessful(true);
-      updateSession();
-      router.push('/welcome');
+      setHasRedirected(true);
+
+      // Update session and redirect
+      updateSession()
+        .then(() => {
+          router.push('/welcome');
+        })
+        .catch(() => {
+          // If session update fails, still redirect
+          router.push('/welcome');
+        });
     }
-  }, [state, router, updateSession]);
+  }, [state.status, hasRedirected, router]);
 
   const handleSubmit = async (formData: FormData) => {
     setEmail(formData.get('email') as string);

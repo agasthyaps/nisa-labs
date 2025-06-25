@@ -18,6 +18,7 @@ export default function Page() {
   const [isSuccessful, setIsSuccessful] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [state, setState] = useState<LoginActionState>({ status: 'idle' });
+  const [hasRedirected, setHasRedirected] = useState(false);
 
   const { update: updateSession } = useSession();
 
@@ -32,12 +33,21 @@ export default function Page() {
         type: 'error',
         description: 'Failed validating your submission!',
       });
-    } else if (state.status === 'success') {
+    } else if (state.status === 'success' && !hasRedirected) {
       setIsSuccessful(true);
-      updateSession();
-      router.push('/welcome');
+      setHasRedirected(true);
+
+      // Update session and redirect
+      updateSession()
+        .then(() => {
+          router.push('/welcome');
+        })
+        .catch(() => {
+          // If session update fails, still redirect
+          router.push('/welcome');
+        });
     }
-  }, [state.status, router, updateSession]);
+  }, [state.status, hasRedirected, router]);
 
   const handleSubmit = async (formData: FormData) => {
     setEmail(formData.get('email') as string);
