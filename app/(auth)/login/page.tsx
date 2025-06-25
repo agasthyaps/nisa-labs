@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useActionState, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from '@/components/toast';
 
 import { AuthForm } from '@/components/auth-form';
@@ -16,13 +16,8 @@ export default function Page() {
 
   const [email, setEmail] = useState('');
   const [isSuccessful, setIsSuccessful] = useState(false);
-
-  const [state, formAction] = useActionState<LoginActionState, FormData>(
-    login,
-    {
-      status: 'idle',
-    },
-  );
+  const [isLoading, setIsLoading] = useState(false);
+  const [state, setState] = useState<LoginActionState>({ status: 'idle' });
 
   const { update: updateSession } = useSession();
 
@@ -42,11 +37,20 @@ export default function Page() {
       updateSession();
       router.push('/welcome');
     }
-  }, [state.status, router]);
+  }, [state.status, router, updateSession]);
 
-  const handleSubmit = (formData: FormData) => {
+  const handleSubmit = async (formData: FormData) => {
     setEmail(formData.get('email') as string);
-    formAction(formData);
+    setIsLoading(true);
+
+    try {
+      const result = await login(state, formData);
+      setState(result);
+    } catch (error) {
+      setState({ status: 'failed' });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

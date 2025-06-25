@@ -1,6 +1,6 @@
 'use client';
 
-import { startTransition, useMemo, useOptimistic, useState } from 'react';
+import React, { startTransition, useMemo, useState } from 'react';
 
 import { saveChatModelAsCookie } from '@/app/(chat)/actions';
 import { Button } from '@/components/ui/button';
@@ -26,8 +26,12 @@ export function ModelSelector({
   selectedModelId: string;
 } & React.ComponentProps<typeof Button>) {
   const [open, setOpen] = useState(false);
-  const [optimisticModelId, setOptimisticModelId] =
-    useOptimistic(selectedModelId);
+  const [optimisticModelId, setOptimisticModelId] = useState(selectedModelId);
+
+  // Update optimistic state when prop changes
+  React.useEffect(() => {
+    setOptimisticModelId(selectedModelId);
+  }, [selectedModelId]);
 
   const userType = session.user.type;
   const { availableChatModelIds } = entitlementsByUserType[userType];
