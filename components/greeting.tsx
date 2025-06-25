@@ -9,12 +9,16 @@ const getNameFromEmail = (email: string | null | undefined): string => {
   const beforeAt = email.split('@')[0];
   if (!beforeAt) return 'Coach';
 
-  // Remove any non-letter characters and get the first part
-  const cleanName = beforeAt.replace(/[^a-zA-Z]/g, '');
+  // Split on '.' and take the first part
+  const firstPart = beforeAt.split('.')[0];
+  if (!firstPart) return 'Coach';
+
+  // Remove any trailing non-letter characters
+  const cleanName = firstPart.replace(/[^a-zA-Z]+$/, '');
   if (!cleanName) return 'Coach';
 
   // Capitalize first letter
-  return cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+  return cleanName.charAt(0).toUpperCase() + cleanName.slice(1).toLowerCase();
 };
 
 export const Greeting = () => {
