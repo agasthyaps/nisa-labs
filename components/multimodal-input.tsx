@@ -194,7 +194,7 @@ function PureMultimodalInput({
   }, [status, scrollToBottom]);
 
   return (
-    <div className="relative w-full flex flex-col gap-4">
+    <div className="relative w-full max-w-full flex flex-col gap-4 px-2">
       <AnimatePresence>
         {!isAtBottom && (
           <motion.div
