@@ -26,9 +26,28 @@ export default function LandingPage() {
               className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 p-6 text-white transition-all duration-300 hover:from-blue-700 hover:to-blue-800 hover:shadow-lg"
             >
               <div className="relative z-10">
-                <h3 className="text-xl font-semibold mb-2">try as guest</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  chat with an experimental version of nisa as guest
+                </h3>
                 <p className="text-blue-100 opacity-90">
                   start chatting immediately without an account
+                </p>
+              </div>
+            </Link>
+
+            <Link
+              href="https://coaching-frontend-p2qg.onrender.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-green-600 to-green-700 p-6 text-white transition-all duration-300 hover:from-green-700 hover:to-green-800 hover:shadow-lg"
+            >
+              <div className="relative z-10">
+                <h3 className="text-xl font-semibold mb-2">
+                  coaching turing test
+                </h3>
+                <p className="text-green-100 opacity-90">
+                  see if you can tell which response came from a human coach and
+                  which came from an LLM
                 </p>
               </div>
             </Link>
