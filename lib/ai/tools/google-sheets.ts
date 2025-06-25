@@ -267,19 +267,40 @@ function isValidDateFormat(dateString: string): boolean {
 function parseA1Notation(
   range: string,
 ): { column: string; startRow: number; endRow: number } | null {
-  const match = range.match(/^([A-Z]+)(\d+):([A-Z]+)(\d+)$/);
-  if (!match) return null;
+  console.log(`Parsing range: "${range}"`);
+
+  // Handle ranges with or without sheet names
+  // Examples: "A1:A10", "Sheet1!A1:A10", "Coaching Action Plan!A1:A10"
+
+  // First, try to match with sheet name
+  let match = range.match(/^[^!]+!([A-Z]+)(\d+):([A-Z]+)(\d+)$/);
+
+  // If no match, try without sheet name
+  if (!match) {
+    match = range.match(/^([A-Z]+)(\d+):([A-Z]+)(\d+)$/);
+  }
+
+  if (!match) {
+    console.log(`Failed to parse range: "${range}"`);
+    return null;
+  }
 
   const [, startCol, startRow, endCol, endRow] = match;
 
   // Check if it's a vertical range (same column)
-  if (startCol !== endCol) return null;
+  if (startCol !== endCol) {
+    console.log(`Range is not vertical: ${startCol} != ${endCol}`);
+    return null;
+  }
 
-  return {
+  const result = {
     column: startCol,
     startRow: Number.parseInt(startRow, 10),
     endRow: Number.parseInt(endRow, 10),
   };
+
+  console.log(`Successfully parsed range:`, result);
+  return result;
 }
 
 // Helper function to get next available column
@@ -368,12 +389,12 @@ async function findNextAvailableColumn(
 export const addNewDecisionLog = ({ session }: GoogleSheetsToolProps) =>
   tool({
     description:
-      'Add a new decision log entry to a Google Sheet. The tool will automatically find the next available column and validate the date format.',
+      'Add a new decision log entry to a Google Sheet. The tool will automatically find the next available column and validate the date format, which is always in MM-DD-YY format.',
     parameters: z.object({
       range: z
         .string()
         .describe(
-          'The range in A1 notation for a vertical column (e.g., "Sheet1!A1:A10"). Must be a single column range.',
+          'The range in A1 notation for a vertical column (e.g., "A1:A10" or "Sheet1!A1:A10"). Must be a single column range. First value must be date in MM-DD-YY format. Sheet name is optional since the tool uses the first sheet.',
         ),
       values: z
         .array(z.string())
@@ -435,13 +456,13 @@ export const addNewDecisionLog = ({ session }: GoogleSheetsToolProps) =>
           authClient,
           spreadsheetId,
           sheetName,
-          parsedRange.startRow,
-          parsedRange.endRow,
+          22, // Always start at row 22
+          26, // Always end at row 26
         );
         console.log(`Selected column: ${availableColumn}`);
 
-        // Create the new range with the available column
-        const newRange = `${sheetName}!${availableColumn}${parsedRange.startRow}:${availableColumn}${parsedRange.endRow}`;
+        // Create the new range with the available column (always rows 22-26)
+        const newRange = `${sheetName}!${availableColumn}22:${availableColumn}26`;
         console.log(`Writing to range: ${newRange}`);
         console.log(`Values to write:`, values);
 
@@ -614,8 +635,8 @@ export const readDecisionLog = ({ session }: GoogleSheetsToolProps) =>
           data: values,
           range: range,
           endColumn: endColumn,
-          rows: values.length,
-          columns: values[0]?.length || 0,
+          rowCount: values.length,
+          columnCount: values[0]?.length || 0,
         };
       } catch (error: any) {
         console.error('Error reading decision log:', error);

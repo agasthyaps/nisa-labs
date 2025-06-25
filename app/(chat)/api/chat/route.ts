@@ -22,6 +22,7 @@ import { createDocument } from '@/lib/ai/tools/create-document';
 import { updateDocument } from '@/lib/ai/tools/update-document';
 import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
 import { getWeather } from '@/lib/ai/tools/get-weather';
+import { transcribeImage } from '@/lib/ai/tools/transcribe-notes';
 import { isProductionEnvironment } from '@/lib/constants';
 import { myProvider } from '@/lib/ai/providers';
 import { postRequestBodySchema, type PostRequestBody } from './schema';
@@ -118,19 +119,98 @@ export async function POST(request: Request) {
 
     const previousMessages = await getMessagesByChatId({ id });
 
+    // If the message has image attachments, automatically transcribe them
+    let messageWithTranscription = message;
+    if (
+      message.experimental_attachments &&
+      message.experimental_attachments.length > 0
+    ) {
+      const imageAttachments = message.experimental_attachments.filter(
+        (attachment) => attachment.contentType?.startsWith('image/'),
+      );
+
+      if (imageAttachments.length > 0) {
+        // Transcribe the first image attachment
+        const imageUrl = imageAttachments[0].url;
+        let content = '';
+
+        try {
+          const { fullStream } = streamText({
+            model: myProvider.languageModel(selectedChatModel),
+            messages: [
+              {
+                role: 'user',
+                content: [
+                  {
+                    type: 'text',
+                    text: 'If this image contains handwritten text, transcribe it exactly as it appears. If it contains other content (photos, diagrams, etc.), provide a detailed description of what you see.',
+                  },
+                  {
+                    type: 'image',
+                    image: imageUrl,
+                  },
+                ],
+              },
+            ],
+          });
+
+          for await (const delta of fullStream) {
+            if (delta.type === 'text-delta') {
+              content += delta.textDelta;
+            }
+          }
+
+          // Add the content to the message
+          if (content.trim()) {
+            messageWithTranscription = {
+              ...message,
+              content: `${message.content}\n\n[Image content: ${content.trim()}]`,
+              parts: [
+                ...message.parts,
+                {
+                  type: 'text',
+                  text: `\n\n[Image content: ${content.trim()}]`,
+                },
+              ],
+            };
+          }
+        } catch (error) {
+          console.error('Failed to transcribe image:', error);
+        }
+      }
+    }
+
     const messages = appendClientMessage({
       // @ts-expect-error: todo add type conversion from DBMessage[] to UIMessage[]
       messages: previousMessages,
-      message,
+      message: messageWithTranscription,
     });
 
     const { longitude, latitude, city, country } = geolocation(request);
+
+    // Get current date and time
+    const now = new Date();
+    const currentDate = now.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    const currentTime = now.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    });
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
     const requestHints: RequestHints = {
       longitude,
       latitude,
       city,
       country,
+      currentDate,
+      currentTime,
+      timezone,
     };
 
     await saveMessages({

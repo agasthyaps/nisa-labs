@@ -186,7 +186,9 @@ const PurePreviewMessage = ({
                         />
                       ) : toolName === 'readGoogleSheet' ||
                         toolName === 'writeGoogleSheet' ||
-                        toolName === 'appendGoogleSheet' ? (
+                        toolName === 'appendGoogleSheet' ||
+                        toolName === 'addNewDecisionLog' ||
+                        toolName === 'readDecisionLog' ? (
                         <div className="text-sm text-muted-foreground">
                           {toolName === 'readGoogleSheet' &&
                             'Reading from Google Sheet...'}
@@ -194,6 +196,14 @@ const PurePreviewMessage = ({
                             'Writing to Google Sheet...'}
                           {toolName === 'appendGoogleSheet' &&
                             'Appending to Google Sheet...'}
+                          {toolName === 'addNewDecisionLog' &&
+                            'Adding new decision log entry...'}
+                          {toolName === 'readDecisionLog' &&
+                            'Reading decision log...'}
+                        </div>
+                      ) : toolName === 'transcribeImage' ? (
+                        <div className="text-sm text-muted-foreground">
+                          Processing image...
                         </div>
                       ) : null}
                     </div>
@@ -226,8 +236,21 @@ const PurePreviewMessage = ({
                         />
                       ) : toolName === 'readGoogleSheet' ||
                         toolName === 'writeGoogleSheet' ||
-                        toolName === 'appendGoogleSheet' ? (
+                        toolName === 'appendGoogleSheet' ||
+                        toolName === 'addNewDecisionLog' ||
+                        toolName === 'readDecisionLog' ? (
                         <GoogleSheetsResult result={result} />
+                      ) : toolName === 'transcribeImage' ? (
+                        <div className="bg-muted p-4 rounded-lg">
+                          <div className="text-sm font-medium text-muted-foreground mb-2">
+                            Transcribed Image:
+                          </div>
+                          <div className="whitespace-pre-wrap text-sm">
+                            {result.content ||
+                              result.error ||
+                              'No content available'}
+                          </div>
+                        </div>
                       ) : (
                         <pre>{JSON.stringify(result, null, 2)}</pre>
                       )}

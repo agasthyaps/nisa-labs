@@ -13,6 +13,17 @@ interface GoogleSheetsResultProps {
     rows?: string[][];
     values?: string[][];
     note?: string;
+    // Decision log specific fields
+    originalRange?: string;
+    actualRange?: string;
+    column?: string;
+    endColumn?: string;
+    rowCount?: number;
+    columnCount?: number;
+    updatedRange?: string;
+    updatedRows?: number;
+    updatedColumns?: number;
+    updatedCells?: number;
   };
 }
 
@@ -51,6 +62,66 @@ export function GoogleSheetsResult({ result }: GoogleSheetsResultProps) {
         {result.range && (
           <div className="text-sm">
             <strong>Range:</strong> {result.range}
+          </div>
+        )}
+
+        {result.originalRange && (
+          <div className="text-sm">
+            <strong>Original Range:</strong> {result.originalRange}
+          </div>
+        )}
+
+        {result.actualRange && (
+          <div className="text-sm">
+            <strong>Actual Range:</strong> {result.actualRange}
+          </div>
+        )}
+
+        {result.column && (
+          <div className="text-sm">
+            <strong>Column:</strong> {result.column}
+          </div>
+        )}
+
+        {result.endColumn && (
+          <div className="text-sm">
+            <strong>End Column:</strong> {result.endColumn}
+          </div>
+        )}
+
+        {result.rowCount && (
+          <div className="text-sm">
+            <strong>Rows:</strong> {result.rowCount}
+          </div>
+        )}
+
+        {result.columnCount && (
+          <div className="text-sm">
+            <strong>Columns:</strong> {result.columnCount}
+          </div>
+        )}
+
+        {result.updatedRange && (
+          <div className="text-sm">
+            <strong>Updated Range:</strong> {result.updatedRange}
+          </div>
+        )}
+
+        {result.updatedRows && (
+          <div className="text-sm">
+            <strong>Updated Rows:</strong> {result.updatedRows}
+          </div>
+        )}
+
+        {result.updatedColumns && (
+          <div className="text-sm">
+            <strong>Updated Columns:</strong> {result.updatedColumns}
+          </div>
+        )}
+
+        {result.updatedCells && (
+          <div className="text-sm">
+            <strong>Updated Cells:</strong> {result.updatedCells}
           </div>
         )}
 
