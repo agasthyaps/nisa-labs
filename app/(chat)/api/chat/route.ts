@@ -67,6 +67,22 @@ function getStreamContext() {
   return globalStreamContext;
 }
 
+// Function to extract name from email
+const getNameFromEmail = (email: string | null | undefined): string => {
+  if (!email) return 'Coach';
+
+  // Get the part before @
+  const beforeAt = email.split('@')[0];
+  if (!beforeAt) return 'Coach';
+
+  // Remove any non-letter characters and get the first part
+  const cleanName = beforeAt.replace(/[^a-zA-Z]/g, '');
+  if (!cleanName) return 'Coach';
+
+  // Capitalize first letter
+  return cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+};
+
 export async function POST(request: Request) {
   let requestBody: PostRequestBody;
 
@@ -203,6 +219,9 @@ export async function POST(request: Request) {
     });
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
+    // Extract user name from email
+    const userName = getNameFromEmail(session.user.email);
+
     const requestHints: RequestHints = {
       longitude,
       latitude,
@@ -211,6 +230,7 @@ export async function POST(request: Request) {
       currentDate,
       currentTime,
       timezone,
+      userName,
     };
 
     await saveMessages({

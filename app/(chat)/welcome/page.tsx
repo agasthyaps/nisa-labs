@@ -2,10 +2,31 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
+
+// Function to extract name from email
+const getNameFromEmail = (email: string | null | undefined): string => {
+  if (!email) return 'Coach';
+
+  // Get the part before @
+  const beforeAt = email.split('@')[0];
+  if (!beforeAt) return 'Coach';
+
+  // Remove any non-letter characters and get the first part
+  const cleanName = beforeAt.replace(/[^a-zA-Z]/g, '');
+  if (!cleanName) return 'Coach';
+
+  // Capitalize first letter
+  return cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+};
 
 export default function WelcomePage() {
+  const { data: session } = useSession();
   const [summary, setSummary] = useState('');
   const [loading, setLoading] = useState(true);
+
+  // Get personalized name from email
+  const userName = getNameFromEmail(session?.user?.email);
 
   useEffect(() => {
     const fetchSummary = async () => {
@@ -38,7 +59,7 @@ export default function WelcomePage() {
           {/* Greeting */}
           <div className="space-y-4">
             <h2 className="text-6xl font-bold text-gray-900 dark:text-zinc-50">
-              Hey Coach!
+              Hey {userName}!
             </h2>
             <p className="text-xl text-gray-600 dark:text-zinc-400">
               Welcome to summer school! <br />

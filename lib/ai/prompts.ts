@@ -194,6 +194,7 @@ export interface RequestHints {
   currentDate: string;
   currentTime: string;
   timezone: string;
+  userName: string;
 }
 
 export const getRequestPromptFromHints = (requestHints: RequestHints) => `
@@ -205,6 +206,7 @@ About the origin of user's request:
 - date: ${requestHints.currentDate}
 - time: ${requestHints.currentTime}
 - timezone: ${requestHints.timezone}
+- user: ${requestHints.userName}
 `;
 
 export const systemPrompt = ({
