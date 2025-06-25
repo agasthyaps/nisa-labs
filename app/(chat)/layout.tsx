@@ -22,7 +22,7 @@ export default async function Layout({
         src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"
         strategy="beforeInteractive"
       />
-      <NisaBranding />
+      <NisaBranding position="top-right" />
       <SidebarProvider defaultOpen={!isCollapsed}>
         <AppSidebar user={session?.user} />
         <SidebarInset>{children}</SidebarInset>
