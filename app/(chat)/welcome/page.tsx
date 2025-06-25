@@ -77,6 +77,20 @@ export default function WelcomePage() {
                 </p>
               </div>
             </Link>
+
+            <Link
+              href="https://aishow.nisa.coach"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-600 to-purple-700 p-8 text-white transition-all duration-300 hover:from-purple-700 hover:to-purple-800 hover:shadow-lg"
+            >
+              <div className="relative z-10">
+                <h3 className="text-2xl font-semibold mb-2">create podcast</h3>
+                <p className="text-purple-100 opacity-90">
+                  create a personalized podcast for your teachers
+                </p>
+              </div>
+            </Link>
           </div>
         </div>
       </div>
