@@ -1,10 +1,12 @@
 'use client';
 
 import Link from 'next/link';
+import { NisaBranding } from '@/components/nisa-branding';
 
 export default function LandingPage() {
   return (
     <div className="flex h-dvh w-screen items-center justify-center bg-background">
+      <NisaBranding />
       <div className="w-full max-w-md px-6 text-center">
         <div className="space-y-8">
           {/* Title */}

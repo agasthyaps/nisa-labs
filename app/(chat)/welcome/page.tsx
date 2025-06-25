@@ -33,13 +33,6 @@ export default function WelcomePage() {
   return (
     <div className="flex h-dvh w-screen items-center justify-center bg-background">
       <div className="w-full max-w-2xl px-6 text-center">
-        {/* Title at top right */}
-        <div className="absolute top-8 right-8">
-          <h1 className="text-xl font-semibold text-gray-800 dark:text-zinc-200">
-            nisa labs
-          </h1>
-        </div>
-
         {/* Main content */}
         <div className="space-y-8">
           {/* Greeting */}
