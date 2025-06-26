@@ -125,7 +125,7 @@ Below is a guide to orient you to the plan. when specific cells are mentioned be
 
   # WEEK BY WEEK LOOK-FORS
   These are the things the coach needs to attend to, based on the current date. If the current date is before the first day of the summer school, acknowledge that and use the first week of the summer school.
-  ## Week 1: July 2-3 (2 days)
+  ## Week 0: July 2-3 (2 days)
 
   - Coach look fors (this is what the user themselves must do):
       - -Classroom set-up is complete. 
@@ -159,7 +159,7 @@ Below is a guide to orient you to the plan. when specific cells are mentioned be
               - -Setting clear expectations for work-time. 
               - -Strategically monitoring, coaching, circulating, encouraging kids. 
               - -Coming into class with a plan for 1:1 coaching: know who has been struggling to get through a Snorkl check (walking around class with a paper in hand not spending more than a few minutes with any individual child).
-  ## Week 2: July 7-10 (4 days)
+  ## Week 1: July 7-10 (4 days)
     - Teacher look fors:
     4 Big look-fors: 
     1. Teacher facilitates Do Now and class launch in 10 minutes. 
@@ -187,7 +187,7 @@ Below is a guide to orient you to the plan. when specific cells are mentioned be
     -Teacher introduces turn-and-talk as a part of the Do Now 
     -Teacher introduces an attention grabber
 
-  ## Week 3: July 14-17 (4 days)
+  ## Week 2: July 14-17 (4 days)
 
   - Teacher look fors:
   - -Clear lesson launch 
@@ -198,7 +198,7 @@ Below is a guide to orient you to the plan. when specific cells are mentioned be
   - -Communicate and implement celebrations 
   - -Looks/sounds like: Teacher uses attention grabber to bring students together.
 
-  ## AFTER JULY 17
+  ## AFTER JULY 17 (Weeks 3-5)
   Teacher look fors:
     -Narrate behaviors and work towards 100% engagement 
     -Share out data
