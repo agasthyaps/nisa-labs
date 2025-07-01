@@ -198,17 +198,17 @@ Below is a guide to orient you to the plan. when specific cells are mentioned be
   ## Week 0: July 2-3 (2 days)
 
   - Coach look fors (this is what the user themselves must do):
-      - -Classroom set-up is complete. 
-      - -Coach observes Day 1 launch and gives feedback on classroom inputs.
+    -Classroom set-up is complete. 
+    -Coach observes Day 1 launch and gives feedback on classroom inputs.
   - Teacher look fors (this is what the user will be looking for when they observe the teacher):
-      - -Launches Model on 7/2. 
+    -Launches Model on 7/2. 
     -Distributes Zearn logins and passwords. 
     -Kids practice on Snorkl 
     -Teachers play a name game and introduce 1-2 procedures. 
     -If time allows, kids start on Zearn. 
 
   *Actual first day is Thursday 7/3.* 
-  4 Big look-fors on 7/3: 
+  look fors:
   1. Teacher facilitates Do Now and class launch in 10 minutes. 
   Looks like: Do Now is posted when kids enter. 
   -Looks like: All kids working on Do Now within 2 mins of entering. 
@@ -226,33 +226,19 @@ Below is a guide to orient you to the plan. when specific cells are mentioned be
   -Sounds like: Teachers sharing data at beginning of class. 
 
   4. Teacher gives clear, explicit instructions for independent study time so kids complete lessons on Zearn and Snorkl checks independently.
-              - -Setting clear expectations for work-time. 
-              - -Strategically monitoring, coaching, circulating, encouraging kids. 
-              - -Coming into class with a plan for 1:1 coaching: know who has been struggling to get through a Snorkl check (walking around class with a paper in hand not spending more than a few minutes with any individual child).
-  ## Week 1: July 7-10 (4 days)
-    - Teacher look fors:
-    4 Big look-fors: 
-    1. Teacher facilitates Do Now and class launch in 10 minutes. 
-    Looks like: Do Now is posted when kids enter. 
-    -Looks like: All kids working on Do Now within 2 mins of entering. 
-    -Looks like: Teacher circulates during Do Now and narrates behavior. 
-
-    2. Teacher explicitly teaches and reinforces routines and procedures. 
-    -Sounds like: "Today we're going to define exactly what we want it to look like when you walk in the room so that we can make the most of our time together. When you walk in the room, please pick up white boards and markers and walk directly to your desk and start working." 
-    -Could include: How/when to gather and return your materials. 
-    -All or most students follow procedures; when they don't teachers give immediate feedback or ask the class to repeat the procedure. 
-
-    3. Teacher builds positive culture by narrating behavior, calling students by name and introducing class reward. 
-    -Sounds like: Teacher knows and greets each student by name. 
-    -Sounds like: Narrating behavior (individual, group and full class) and acknowledging when kids complete mastery checks. 
-    -Sounds like: INtroducing and giving the Trophy every day.
-    -Sounds like: Teachers sharing data at beginning of class. 
-
-    4. Teacher gives clear, explicit instructions for independent study time so kids complete lessons on Zearn and Snorkl checks independently.
     -Setting clear expectations for work-time. 
     -Strategically monitoring, coaching, circulating, encouraging kids. 
-    -Coming into class with a plan for 1:1 coaching: know who has been struggling to get through a Snorkl check (walking around class with a paper in hand not spending more than a few minutes with any individual child). 
+    -Coming into class with a plan for 1:1 coaching: know who has been struggling to get through a Snorkl check (walking around class with a paper in hand not spending more than a few minutes with any individual child).
+  ## Week 1: July 7-10 (4 days)
+  Teacher look fors:
+    1. Teacher facilitates Do Now and class launch in 10 minutes. 
 
+    2. Teacher explicitly teaches and reinforces routines and procedures. 
+
+    3. Teacher builds positive culture by narrating behavior, calling students by name and introducing class reward. 
+
+    4. Teacher gives clear, explicit instructions for independent study time so kids complete lessons on Zearn and Snorkl checks independently.
+   
     Nice-to-haves: 
     -Teacher introduces turn-and-talk as a part of the Do Now 
     -Teacher introduces an attention grabber
