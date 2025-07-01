@@ -68,7 +68,15 @@ function PureMessages({
 
       {status === 'submitted' &&
         messages.length > 0 &&
-        messages[messages.length - 1].role === 'user' && <ThinkingMessage />}
+        messages[messages.length - 1].role === 'user' && (
+          <ThinkingMessage
+            hasImages={
+              messages[messages.length - 1].experimental_attachments?.some(
+                (attachment) => attachment.contentType?.startsWith('image/'),
+              ) || false
+            }
+          />
+        )}
 
       <motion.div
         ref={messagesEndRef}

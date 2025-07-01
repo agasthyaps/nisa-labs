@@ -3,7 +3,7 @@
 import type { UIMessage } from 'ai';
 import cx from 'classnames';
 import { AnimatePresence, motion } from 'framer-motion';
-import { memo, useState } from 'react';
+import { memo, useState, useEffect } from 'react';
 import type { Vote } from '@/lib/db/schema';
 import { DocumentToolCall, DocumentToolResult } from './document';
 import { PencilEditIcon, SparklesIcon } from './icons';
@@ -290,8 +290,30 @@ export const PreviewMessage = memo(
   },
 );
 
-export const ThinkingMessage = () => {
+interface ThinkingMessageProps {
+  hasImages?: boolean;
+}
+
+export const ThinkingMessage = ({
+  hasImages = false,
+}: ThinkingMessageProps) => {
   const role = 'assistant';
+  const [dots, setDots] = useState('');
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDots((prev) => (prev.length >= 3 ? '' : `${prev}.`));
+    }, 800);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const getMessage = () => {
+    if (hasImages) {
+      return `Analyzing your message and images${dots}`;
+    }
+    return `Thinking${dots}`;
+  };
 
   return (
     <motion.div
@@ -310,12 +332,27 @@ export const ThinkingMessage = () => {
         )}
       >
         <div className="size-8 flex items-center rounded-full justify-center ring-1 shrink-0 ring-border">
-          <SparklesIcon size={14} />
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{
+              duration: 3,
+              repeat: Number.POSITIVE_INFINITY,
+              ease: 'linear',
+            }}
+            className="translate-y-px"
+          >
+            <SparklesIcon size={14} />
+          </motion.div>
         </div>
 
         <div className="flex flex-col gap-2 w-full">
           <div className="flex flex-col gap-4 text-muted-foreground">
-            Hmm...
+            <span>{getMessage()}</span>
+            {hasImages && (
+              <div className="text-xs text-muted-foreground/70">
+                Processing transcribed content and visual elements...
+              </div>
+            )}
           </div>
         </div>
       </div>

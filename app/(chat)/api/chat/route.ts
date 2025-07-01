@@ -22,7 +22,8 @@ import { createDocument } from '@/lib/ai/tools/create-document';
 import { updateDocument } from '@/lib/ai/tools/update-document';
 import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
 import { getWeather } from '@/lib/ai/tools/get-weather';
-import { transcribeImage } from '@/lib/ai/tools/transcribe-notes';
+import { transcribeImage as transcribeNotes } from '@/lib/ai/tools/transcribe-notes';
+import { transcribeImage } from '@/lib/ai/image-transcription';
 import { isProductionEnvironment } from '@/lib/constants';
 import { myProvider } from '@/lib/ai/providers';
 import { postRequestBodySchema, type PostRequestBody } from './schema';
@@ -135,7 +136,7 @@ export async function POST(request: Request) {
 
     const previousMessages = await getMessagesByChatId({ id });
 
-    // If the message has image attachments, automatically transcribe them
+    // If the message has image attachments, automatically transcribe them using dedicated GPT-4.1
     let messageWithTranscription = message;
     if (
       message.experimental_attachments &&
@@ -146,52 +147,50 @@ export async function POST(request: Request) {
       );
 
       if (imageAttachments.length > 0) {
-        // Transcribe the first image attachment
-        const imageUrl = imageAttachments[0].url;
-        let content = '';
-
         try {
-          const { fullStream } = streamText({
-            model: myProvider.languageModel(selectedChatModel),
-            messages: [
-              {
-                role: 'user',
-                content: [
-                  {
-                    type: 'text',
-                    text: 'If this image contains handwritten text, transcribe it exactly as it appears. If it contains other content (photos, diagrams, etc.), provide a detailed description of what you see.',
-                  },
-                  {
-                    type: 'image',
-                    image: imageUrl,
-                  },
-                ],
-              },
-            ],
-          });
+          // Process all image attachments
+          const transcriptions = await Promise.all(
+            imageAttachments.map(async (attachment) => {
+              try {
+                const transcription = await transcribeImage(attachment.url);
+                return transcription;
+              } catch (error) {
+                console.error(
+                  `Failed to transcribe image ${attachment.name}:`,
+                  error,
+                );
+                return null;
+              }
+            }),
+          );
 
-          for await (const delta of fullStream) {
-            if (delta.type === 'text-delta') {
-              content += delta.textDelta;
-            }
-          }
+          // Filter out failed transcriptions and combine them
+          const validTranscriptions = transcriptions.filter(Boolean);
 
-          // Add the content to the message
-          if (content.trim()) {
+          if (validTranscriptions.length > 0) {
+            const combinedTranscription = validTranscriptions.join('\n\n');
+            const transcriptionText = `\n\n[Image content: ${combinedTranscription}]`;
+
             messageWithTranscription = {
               ...message,
-              content: `${message.content}\n\n[Image content: ${content.trim()}]`,
+              content: `${message.content}${transcriptionText}`,
               parts: [
                 ...message.parts,
                 {
                   type: 'text',
-                  text: `\n\n[Image content: ${content.trim()}]`,
+                  text: transcriptionText,
                 },
               ],
             };
+
+            console.log('✅ Image transcription completed:', {
+              imageCount: imageAttachments.length,
+              transcriptionLength: combinedTranscription.length,
+              finalContent: messageWithTranscription.content,
+            });
           }
         } catch (error) {
-          console.error('Failed to transcribe image:', error);
+          console.error('Failed to transcribe images:', error);
         }
       }
     }
@@ -237,10 +236,10 @@ export async function POST(request: Request) {
       messages: [
         {
           chatId: id,
-          id: message.id,
+          id: messageWithTranscription.id,
           role: 'user',
-          parts: message.parts,
-          attachments: message.experimental_attachments ?? [],
+          parts: messageWithTranscription.parts,
+          attachments: messageWithTranscription.experimental_attachments ?? [],
           createdAt: new Date(),
         },
       ],
@@ -300,7 +299,7 @@ export async function POST(request: Request) {
                 }
 
                 const [, assistantMessage] = appendResponseMessages({
-                  messages: [message],
+                  messages: [messageWithTranscription],
                   responseMessages: response.messages,
                 });
 

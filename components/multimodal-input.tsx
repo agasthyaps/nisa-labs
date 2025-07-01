@@ -27,6 +27,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowDown } from 'lucide-react';
 import { useScrollToBottom } from '@/hooks/use-scroll-to-bottom';
 import type { VisibilityType } from './visibility-selector';
+import { ImageProcessingMessage } from './image-processing-message';
 
 function PureMultimodalInput({
   chatId,
@@ -108,8 +109,18 @@ function PureMultimodalInput({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadQueue, setUploadQueue] = useState<Array<string>>([]);
+  const [isProcessingImages, setIsProcessingImages] = useState(false);
 
-  const submitForm = useCallback(() => {
+  const submitForm = useCallback(async () => {
+    const imageAttachments = attachments.filter((attachment) =>
+      attachment.contentType?.startsWith('image/'),
+    );
+
+    // Show processing state if images are attached
+    if (imageAttachments.length > 0) {
+      setIsProcessingImages(true);
+    }
+
     window.history.replaceState({}, '', `/chat/${chatId}`);
 
     handleSubmit(undefined, {
@@ -119,6 +130,16 @@ function PureMultimodalInput({
     setAttachments([]);
     setLocalStorageInput('');
     resetHeight();
+
+    // Reset processing state after a short delay to show the transition
+    if (imageAttachments.length > 0) {
+      setTimeout(() => {
+        setIsProcessingImages(false);
+        toast.success(
+          `${imageAttachments.length === 1 ? 'Image' : 'Images'} processed successfully!`,
+        );
+      }, 1500);
+    }
 
     if (width && width > 768) {
       textareaRef.current?.focus();
@@ -220,6 +241,17 @@ function PureMultimodalInput({
         )}
       </AnimatePresence>
 
+      <AnimatePresence>
+        {isProcessingImages && (
+          <ImageProcessingMessage
+            imageCount={
+              attachments.filter((a) => a.contentType?.startsWith('image/'))
+                .length
+            }
+          />
+        )}
+      </AnimatePresence>
+
       {messages.length === 0 &&
         attachments.length === 0 &&
         uploadQueue.length === 0 && (
@@ -288,19 +320,22 @@ function PureMultimodalInput({
                 toast.error(
                   'Please wait for the model to finish its response!',
                 );
+              } else if (isProcessingImages) {
+                toast.error('Please wait for images to finish processing!');
               } else {
                 submitForm();
               }
             }
           }}
         />
-        {status === 'submitted' ? (
+        {status === 'submitted' || isProcessingImages ? (
           <StopButton stop={stop} setMessages={setMessages} />
         ) : (
           <SendButton
             input={input}
             submitForm={submitForm}
             uploadQueue={uploadQueue}
+            isProcessingImages={isProcessingImages}
           />
         )}
       </div>
@@ -374,10 +409,12 @@ function PureSendButton({
   submitForm,
   input,
   uploadQueue,
+  isProcessingImages,
 }: {
   submitForm: () => void;
   input: string;
   uploadQueue: Array<string>;
+  isProcessingImages: boolean;
 }) {
   return (
     <Button
@@ -387,7 +424,9 @@ function PureSendButton({
         event.preventDefault();
         submitForm();
       }}
-      disabled={input.length === 0 || uploadQueue.length > 0}
+      disabled={
+        input.length === 0 || uploadQueue.length > 0 || isProcessingImages
+      }
     >
       <ArrowUpIcon size={14} />
     </Button>
@@ -398,5 +437,7 @@ const SendButton = memo(PureSendButton, (prevProps, nextProps) => {
   if (prevProps.uploadQueue.length !== nextProps.uploadQueue.length)
     return false;
   if (prevProps.input !== nextProps.input) return false;
+  if (prevProps.isProcessingImages !== nextProps.isProcessingImages)
+    return false;
   return true;
 });
