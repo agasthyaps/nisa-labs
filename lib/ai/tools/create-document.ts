@@ -15,12 +15,18 @@ interface CreateDocumentProps {
 export const createDocument = ({ session, dataStream }: CreateDocumentProps) =>
   tool({
     description:
-      'Create a document for a writing or content creation activities. This tool will call other functions that will generate the contents of the document based on the title and kind.',
+      'Create a document for a writing or content creation activities. This tool will call other functions that will generate the contents of the document based on the title and kind. When calling this tool, provide context about what has been discussed in the conversation to help generate relevant content.',
     parameters: z.object({
       title: z.string(),
       kind: z.enum(artifactKinds),
+      context: z
+        .string()
+        .optional()
+        .describe(
+          'Additional context from the conversation to help generate relevant content. Include key details, specific requirements, or information discussed that should be incorporated into the document.',
+        ),
     }),
-    execute: async ({ title, kind }) => {
+    execute: async ({ title, kind, context }) => {
       const id = generateUUID();
 
       dataStream.writeData({
@@ -55,6 +61,7 @@ export const createDocument = ({ session, dataStream }: CreateDocumentProps) =>
       await documentHandler.onCreateDocument({
         id,
         title,
+        context,
         dataStream,
         session,
       });

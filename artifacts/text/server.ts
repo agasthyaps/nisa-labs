@@ -5,14 +5,19 @@ import { updateDocumentPrompt, textPrompt } from '@/lib/ai/prompts';
 
 export const textDocumentHandler = createDocumentHandler<'text'>({
   kind: 'text',
-  onCreateDocument: async ({ title, dataStream }) => {
+  onCreateDocument: async ({ title, context, dataStream }) => {
     let draftContent = '';
+
+    // Build the prompt with context if provided
+    const prompt = context
+      ? `Title: ${title}\n\nContext from conversation: ${context}\n\nGenerate the document based on the title and context provided.`
+      : title;
 
     const { fullStream } = streamText({
       model: myProvider.languageModel('artifact-model'),
       system: textPrompt,
       experimental_transform: smoothStream({ chunking: 'word' }),
-      prompt: title,
+      prompt,
     });
 
     for await (const delta of fullStream) {

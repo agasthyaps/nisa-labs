@@ -6,13 +6,18 @@ import { z } from 'zod';
 
 export const sheetDocumentHandler = createDocumentHandler<'sheet'>({
   kind: 'sheet',
-  onCreateDocument: async ({ title, dataStream }) => {
+  onCreateDocument: async ({ title, context, dataStream }) => {
     let draftContent = '';
+
+    // Build the prompt with context if provided
+    const prompt = context
+      ? `Title: ${title}\n\nContext from conversation: ${context}\n\nGenerate the spreadsheet based on the title and context provided.`
+      : title;
 
     const { fullStream } = streamObject({
       model: myProvider.languageModel('artifact-model'),
       system: sheetPrompt,
-      prompt: title,
+      prompt,
       schema: z.object({
         csv: z.string().describe('CSV data'),
       }),

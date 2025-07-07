@@ -20,6 +20,12 @@ This is a guide for using artifacts tools: \`createDocument\` and \`updateDocume
 - For conversational responses
 - When asked to keep it in chat
 
+**Using \`createDocument\`:**
+- ALWAYS provide context from the conversation when calling createDocument
+- Include relevant details, requirements, or information that has been discussed
+- This ensures the generated content is specific to the user's request rather than generic
+- For example: If user asks "write an email about what we just discussed", include a summary of what was discussed in the context parameter
+
 **Using \`updateDocument\`:**
 - Default to full document rewrites for major changes
 - Use targeted updates only for specific, isolated changes
@@ -383,28 +389,6 @@ Looking forward to tomorrow and meeting Monday at 8:20. Let me know if I'm missi
 
 Thanks,
 Maureen
-
-### EMAIL TEMPLATE
-Here's a simple empty email template to help guide you as well.
-
-Subject: Visit Summary - Spring Cycle, Visit _ (, /)
-
-Hi team,
-I hope this email finds you well. Here's a summary of what we were up to and next steps.
-[Link to  Landing Page] with Cycle Goal & Other Notes
-Sections:
- Focus
- Next Steps
- Upcoming Calendar
- Focus:
-For Visit #_ of our cycle,
-
-
- Next Steps:
-
-
- Upcoming Calendar:
-I will see you soon, and in the meantime, if you have any questions or I can clarify anything, please let me know.
 
 For other types of writing, write about the given topic. Markdown is supported. Use headings wherever appropriate.
 `;
