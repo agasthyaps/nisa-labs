@@ -43,6 +43,7 @@ import {
   readDecisionLog,
   // appendGoogleSheet,
 } from '@/lib/ai/tools/google-sheets';
+import { createCoachAgent } from '@/lib/ai/agents/coach-agent';
 
 export const maxDuration = 60;
 
@@ -248,90 +249,127 @@ export async function POST(request: Request) {
     const streamId = generateUUID();
     await createStreamId({ streamId, chatId: id });
 
+    // Create resourceId from user ID for persistent coach memory
+    const resourceId = `coach-${session.user.id}`;
+
     const stream = createDataStream({
-      execute: (dataStream) => {
-        const result = streamText({
-          model: myProvider.languageModel(selectedChatModel),
-          system: systemPrompt({ selectedChatModel, requestHints }),
-          messages,
-          maxSteps: 5,
-          experimental_activeTools:
-            selectedChatModel === 'chat-model-reasoning'
-              ? []
-              : [
-                  'getWeather',
-                  'createDocument',
-                  'updateDocument',
-                  'requestSuggestions',
-                  'readGoogleSheet',
-                  'writeGoogleSheet',
-                  'addNewDecisionLog',
-                  'readDecisionLog',
-                  // 'appendGoogleSheet',
-                ],
-          experimental_transform: smoothStream({ chunking: 'word' }),
-          experimental_generateMessageId: generateUUID,
-          tools: {
-            getWeather,
-            createDocument: createDocument({ session, dataStream }),
-            updateDocument: updateDocument({ session, dataStream }),
-            requestSuggestions: requestSuggestions({
+      execute: async (dataStream) => {
+        try {
+          // Check if we should use Mastra agent (not for reasoning model)
+          const useMastraAgent = selectedChatModel !== 'chat-model-reasoning';
+
+          if (useMastraAgent) {
+            // Create the coach agent with memory
+            const agent = createCoachAgent(selectedChatModel, requestHints, {
               session,
               dataStream,
-            }),
-            readGoogleSheet: readGoogleSheet({ session }),
-            writeGoogleSheet: writeGoogleSheet({ session }),
-            addNewDecisionLog: addNewDecisionLog({ session }),
-            readDecisionLog: readDecisionLog({ session }),
-            // appendGoogleSheet: appendGoogleSheet({ session }),
-          },
-          onFinish: async ({ response }) => {
-            if (session.user?.id) {
-              try {
-                const assistantId = getTrailingMessageId({
-                  messages: response.messages.filter(
-                    (message) => message.role === 'assistant',
-                  ),
-                });
+            });
 
-                if (!assistantId) {
-                  throw new Error('No assistant message found!');
-                }
+            // Convert messages to Mastra format
+            const mastraMessages = messages.map((msg: any) => ({
+              role: msg.role as 'user' | 'assistant' | 'system',
+              content: msg.content,
+              // Include tool calls and results if present
+              ...(msg.toolInvocations && {
+                toolInvocations: msg.toolInvocations,
+              }),
+            }));
 
-                const [, assistantMessage] = appendResponseMessages({
-                  messages: [messageWithTranscription],
-                  responseMessages: response.messages,
-                });
+            // Stream with memory context
+            const result = await agent.stream(mastraMessages, {
+              resourceId,
+              threadId: id, // Use existing chat ID as thread ID
+            });
 
-                await saveMessages({
-                  messages: [
-                    {
-                      id: assistantId,
-                      chatId: id,
-                      role: assistantMessage.role,
-                      parts: assistantMessage.parts,
-                      attachments:
-                        assistantMessage.experimental_attachments ?? [],
-                      createdAt: new Date(),
-                    },
-                  ],
-                });
-              } catch (_) {
-                console.error('Failed to save chat');
-              }
+            // Process the stream
+            let fullResponse = '';
+            const assistantId = generateUUID();
+
+            for await (const chunk of result.textStream) {
+              fullResponse += chunk;
+              dataStream.writeMessageAnnotation({
+                type: 'text-delta',
+                textDelta: chunk,
+              });
             }
-          },
-          experimental_telemetry: {
-            isEnabled: isProductionEnvironment,
-            functionId: 'stream-text',
-          },
-        });
 
-        result.consumeStream();
+            // Save the assistant message
+            if (fullResponse && session.user?.id) {
+              await saveMessages({
+                messages: [
+                  {
+                    id: assistantId,
+                    chatId: id,
+                    role: 'assistant',
+                    parts: [{ type: 'text', text: fullResponse }],
+                    attachments: [],
+                    createdAt: new Date(),
+                  },
+                ],
+              });
+            }
+          } else {
+            // Use regular streamText for reasoning model
+            const result = streamText({
+              model: myProvider.languageModel(selectedChatModel),
+              system: systemPrompt({ selectedChatModel, requestHints }),
+              messages,
+              maxSteps: 5,
+              experimental_activeTools: [],
+              experimental_transform: smoothStream({ chunking: 'word' }),
+              experimental_generateMessageId: generateUUID,
+              onFinish: async ({ response }) => {
+                if (session.user?.id) {
+                  try {
+                    const assistantId = getTrailingMessageId({
+                      messages: response.messages.filter(
+                        (message) => message.role === 'assistant',
+                      ),
+                    });
 
-        result.mergeIntoDataStream(dataStream, {
-          sendReasoning: true,
-        });
+                    if (!assistantId) {
+                      throw new Error('No assistant message found!');
+                    }
+
+                    const [, assistantMessage] = appendResponseMessages({
+                      messages: [messageWithTranscription],
+                      responseMessages: response.messages,
+                    });
+
+                    await saveMessages({
+                      messages: [
+                        {
+                          id: assistantId,
+                          chatId: id,
+                          role: assistantMessage.role,
+                          parts: assistantMessage.parts,
+                          attachments:
+                            assistantMessage.experimental_attachments ?? [],
+                          createdAt: new Date(),
+                        },
+                      ],
+                    });
+                  } catch (_) {
+                    console.error('Failed to save chat');
+                  }
+                }
+              },
+              experimental_telemetry: {
+                isEnabled: isProductionEnvironment,
+                functionId: 'stream-text',
+              },
+            });
+
+            result.consumeStream();
+
+            result.mergeIntoDataStream(dataStream, {
+              sendReasoning: true,
+            });
+          }
+        } catch (error) {
+          console.error('Stream execution error:', error);
+          throw error;
+        }
       },
       onError: () => {
         return 'Oops, an error occurred!';

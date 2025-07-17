@@ -57,6 +57,13 @@
       "when": 1750425765199,
       "tag": "0007_lucky_skreet",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1753200000000,
+      "tag": "0008_pgvector_extension",
+      "breakpoints": true
     }
   ]
 }
