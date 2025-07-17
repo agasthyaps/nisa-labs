@@ -58,9 +58,11 @@ const pgConfig: any = {
   connectionString,
 };
 
-// For local development, allow self-signed SSL certificates.
-// Vercel Postgres and other hosted providers use trusted certificates.
-if (process.env.NODE_ENV !== 'production') {
+// By default, Postgres clients in Node.js will reject connections to servers
+// using self-signed SSL certificates. If your database requires this,
+// you can bypass the restriction by setting the following environment variable.
+// Note: This is insecure and should only be used for development or trusted networks.
+if (process.env.POSTGRES_REJECT_UNAUTHORIZED === 'false') {
   pgConfig.ssl = {
     rejectUnauthorized: false,
   };
