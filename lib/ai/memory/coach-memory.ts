@@ -47,26 +47,25 @@ export const coachProfileSchema = z.object({
 export type CoachProfile = z.infer<typeof coachProfileSchema>;
 
 // Get the connection string with proper error handling
-const connectionString = process.env.POSTGRES_URL || process.env.DATABASE_URL;
+let connectionString = process.env.POSTGRES_URL || process.env.DATABASE_URL;
 if (!connectionString) {
   throw new Error(
     'POSTGRES_URL or DATABASE_URL environment variable is required',
   );
 }
 
-const pgConfig: any = {
-  connectionString,
-};
-
 // By default, Postgres clients in Node.js will reject connections to servers
 // using self-signed SSL certificates. If your database requires this,
 // you can bypass the restriction by setting the following environment variable.
 // Note: This is insecure and should only be used for development or trusted networks.
 if (process.env.POSTGRES_REJECT_UNAUTHORIZED === 'false') {
-  pgConfig.ssl = {
-    rejectUnauthorized: false,
-  };
+  const separator = connectionString.includes('?') ? '&' : '?';
+  connectionString = `${connectionString}${separator}sslmode=disable`;
 }
+
+const pgConfig: any = {
+  connectionString,
+};
 
 // Initialize memory with resource-scoped working memory
 export const coachMemory = new Memory({
