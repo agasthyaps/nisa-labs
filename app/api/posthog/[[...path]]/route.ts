@@ -1,15 +1,25 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
-export async function POST(request: NextRequest) {
-  const searchParams = request.nextUrl.searchParams;
-  const endpoint = searchParams.get('endpoint') || 'capture';
-
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { path: string[] } },
+) {
   try {
+    const path = params.path ? params.path.join('/') : 'capture';
+    const url = new URL(request.url);
     const body = await request.text();
 
-    const posthogUrl = `https://us.i.posthog.com/${endpoint}/`;
+    // Construct the PostHog URL
+    const posthogUrl = new URL(`https://us.i.posthog.com/${path}/`);
 
-    const response = await fetch(posthogUrl, {
+    // Forward all search parameters
+    url.searchParams.forEach((value, key) => {
+      posthogUrl.searchParams.append(key, value);
+    });
+
+    console.log('PostHog POST proxy:', posthogUrl.toString());
+
+    const response = await fetch(posthogUrl.toString(), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -23,30 +33,36 @@ export async function POST(request: NextRequest) {
     return new NextResponse(data, {
       status: response.status,
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type':
+          response.headers.get('content-type') || 'application/json',
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
       },
     });
   } catch (error) {
-    console.error('PostHog proxy error:', error);
+    console.error('PostHog proxy POST error:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
 
-export async function GET(request: NextRequest) {
-  const searchParams = request.nextUrl.searchParams;
-  const endpoint = searchParams.get('endpoint') || '';
-
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { path: string[] } },
+) {
   try {
-    // Forward query parameters
-    const posthogUrl = new URL(`https://us.i.posthog.com/${endpoint}/`);
-    searchParams.forEach((value, key) => {
-      if (key !== 'endpoint') {
-        posthogUrl.searchParams.append(key, value);
-      }
+    const path = params.path ? params.path.join('/') : '';
+    const url = new URL(request.url);
+
+    // Construct the PostHog URL
+    const posthogUrl = new URL(`https://us.i.posthog.com/${path}`);
+
+    // Forward all search parameters
+    url.searchParams.forEach((value, key) => {
+      posthogUrl.searchParams.append(key, value);
     });
+
+    console.log('PostHog GET proxy:', posthogUrl.toString());
 
     const response = await fetch(posthogUrl.toString(), {
       method: 'GET',
@@ -68,7 +84,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('PostHog proxy error:', error);
+    console.error('PostHog proxy GET error:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }

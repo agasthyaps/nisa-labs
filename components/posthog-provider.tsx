@@ -12,13 +12,18 @@ declare global {
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
 
+  // Wait for PostHog to be properly loaded before trying to use it
   useEffect(() => {
-    if (
-      typeof window !== 'undefined' &&
-      window.posthog &&
-      status === 'authenticated' &&
-      session?.user
-    ) {
+    const checkPostHogLoaded = () => {
+      return (
+        typeof window !== 'undefined' &&
+        window.posthog &&
+        typeof window.posthog.identify === 'function' &&
+        window.posthog.__loaded
+      );
+    };
+
+    if (status === 'authenticated' && session?.user && checkPostHogLoaded()) {
       try {
         const userProperties: Record<string, any> = {
           user_type: session.user.type || 'unknown',
@@ -33,9 +38,6 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
         // Identify the user in PostHog
         window.posthog.identify(session.user.id, userProperties);
 
-        // Set user properties
-        window.posthog.people.set(userProperties);
-
         console.log(
           'PostHog user identified:',
           session.user.id,
@@ -44,16 +46,7 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
       } catch (error) {
         console.warn('Failed to identify user in PostHog:', error);
       }
-    }
-  }, [session, status]);
-
-  // Reset user on logout
-  useEffect(() => {
-    if (
-      typeof window !== 'undefined' &&
-      window.posthog &&
-      status === 'unauthenticated'
-    ) {
+    } else if (status === 'unauthenticated' && checkPostHogLoaded()) {
       try {
         window.posthog.reset();
         console.log('PostHog user reset');
@@ -61,7 +54,7 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
         console.warn('Failed to reset PostHog user:', error);
       }
     }
-  }, [status]);
+  }, [session, status]);
 
   return <>{children}</>;
 }

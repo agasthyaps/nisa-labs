@@ -20,7 +20,9 @@ export function usePostHog() {
   const setUserProperty = (property: string, value: any) => {
     try {
       if (typeof window !== 'undefined' && window.posthog) {
-        window.posthog.people.set({ [property]: value });
+        // Use person properties instead of people.set which doesn't exist in web SDK
+        const properties = { [property]: value };
+        window.posthog.setPersonProperties(properties);
         console.log('PostHog user property set:', property, value);
       } else {
         console.warn('PostHog not available, property not set:', property);

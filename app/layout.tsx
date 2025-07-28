@@ -6,6 +6,8 @@ import { PostHogProvider } from '@/components/posthog-provider';
 
 import './globals.css';
 import { SessionProvider } from 'next-auth/react';
+// Temporary import for testing PostHog integration
+import '@/lib/test-posthog';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://chat.vercel.ai'),
@@ -56,14 +58,6 @@ posthog.init('phc_T2MMi2dfH6brHfMoiGON0wG0BvXEbp1ku8OZwEdeBNp', {
     ui_host: 'https://us.i.posthog.com',
     person_profiles: 'always',
     capture_pageview: true,
-    capture_pageleave: true,
-    cookie_domain: '.nisa.coach',
-    cross_subdomain_cookie: true,
-    secure_cookie: true,
-    persistence: 'localStorage+cookie',
-    property_blacklist: [],
-    respect_dnt: false,
-    opt_out_capturing_by_default: false,
     loaded: function(posthog) {
         console.log('PostHog loaded successfully');
     },
