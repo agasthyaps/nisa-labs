@@ -249,10 +249,15 @@ export async function POST(request: Request) {
     await createStreamId({ streamId, chatId: id });
 
     const stream = createDataStream({
-      execute: (dataStream) => {
+      execute: async (dataStream) => {
+        const systemPromptData = await systemPrompt({
+          selectedChatModel,
+          requestHints,
+        });
         const result = streamText({
           model: myProvider.languageModel(selectedChatModel),
-          system: systemPrompt({ selectedChatModel, requestHints }),
+          system: systemPromptData.content,
+
           messages,
           maxSteps: 5,
           experimental_activeTools:
@@ -322,8 +327,16 @@ export async function POST(request: Request) {
             }
           },
           experimental_telemetry: {
-            isEnabled: isProductionEnvironment,
-            functionId: 'stream-text',
+            isEnabled: true,
+            functionId: 'chat-response',
+            metadata: {
+              ...(systemPromptData.langfusePrompt && {
+                langfusePrompt: systemPromptData.langfusePrompt,
+              }),
+              selectedChatModel,
+              userId: session.user.id,
+              chatId: id,
+            },
           },
         });
 

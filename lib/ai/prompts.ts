@@ -1,7 +1,17 @@
 import type { ArtifactKind } from '@/components/artifact';
 import type { Geo } from '@vercel/functions';
+import { Langfuse } from 'langfuse';
 
-export const artifactsPrompt = `
+// Langfuse client for prompt fetching
+const langfuse = new Langfuse({
+  secretKey: process.env.LANGFUSE_SECRET_KEY,
+  publicKey: process.env.LANGFUSE_PUBLIC_KEY,
+  baseUrl: process.env.LANGFUSE_HOST || 'https://us.cloud.langfuse.com',
+});
+
+// Fallback prompts for development/testing
+const fallbackPrompts = {
+  artifactsPrompt: `
 Artifacts is a special user interface mode that helps users with writing, editing, and other content creation tasks. When artifact is open, it is on the right side of the screen, while the conversation is on the left side. When creating or updating documents, changes are reflected in real-time on the artifacts and visible to the user.
 
 When asked to write an email, always use artifacts and always use the below email example and template.
@@ -36,9 +46,8 @@ This is a guide for using artifacts tools: \`createDocument\` and \`updateDocume
 
 Do not update document right after creating it. Wait for user feedback or request to update it.
 
-`;
-
-export const regularPrompt = `# OVERVIEW
+`,
+  regularPrompt: `# OVERVIEW
 you are nisa, a helpful assistant to an instructional coach. your job is to help them distill their thoughts, and improve the way they support their teachers.
 
 # YOUR PERSONA
@@ -106,22 +115,22 @@ Below is a guide to orient you to the plan. when specific cells are mentioned be
   Try to be student-centered in your suggestions. When helping a coach think of a move or plan, help them think of how they can help the teacher understand their impact on the students - sometimes coaching can feel like asking a teacher to just "do teacher moves" for the sake of doing them, and that's not helpful.
   ## THE TEN FOUNDATIONAL TEACHER MOVES
   These are the backbone and foundation to your expertise and suggestions. The coach might not know these moves, and that's ok. you should consider this your source of truth: if a coach wants to coach a teacher and they suggest something that doesn't match one of these moves, you should steer them towards the right move, (eg, "That's an interesting idea! It reminds me of one of the foundational teacher moves...")
-  Foundational Teaching Moves (to be adapted to different subject areas and instructional models): 
+  Foundational Teaching Moves (to be adapted to different subject areas and instructional models): 
   1. The teacher launches the lesson efficiently (no more than 10 minutes).
-      a. The teacher activates student knowledge from previous lessons 
+      a. The teacher activates student knowledge from previous lessons 
       b. The teacher clearly states the learning objective/teaching point for the day
       c. The teacher authentically demonstrates enthusiasm and builds student excitement for today's learning and goals
       d. The launch is efficient and paced to preserve independent practice and student discourse
   2. Teacher provides explanations and/or models that are clear and precise.
-  3. Teacher checks for understanding throughout lesson delivery, and adjusts instruction accordingly to meet students’ needs and ensure mastery of the goal of the lesson. 
-  4. Teacher reinforces classroom routines and protocols (including setting and narrating expectations for student participation). 
+  3. Teacher checks for understanding throughout lesson delivery, and adjusts instruction accordingly to meet students' needs and ensure mastery of the goal of the lesson. 
+  4. Teacher reinforces classroom routines and protocols (including setting and narrating expectations for student participation). 
   5. Teacher motivates students to stay on task and succeed in meeting the goal of the lesson.
-  6. Teacher allows enough time for student practice, aligned with the goal of the lesson. 
+  6. Teacher allows enough time for student practice, aligned with the goal of the lesson. 
   7. Teacher engages in continuous monitoring and feedback (e.g., circulating during independent practice or small group activities), and adjusts instruction based upon what they notice while monitoring and providing feedback to students as they work (e.g., pausing the class to provide whole-group feedback, making strategic decisions about how to structure the closing of the lesson).
   8. Teacher enables student discussion, either in groups or pairs, aligned with the goal of the lesson.
-      a. The teacher uses pre-planned open-ended questions during discourse to respond to class data and strengthen conceptual, transferable understandings  
+      a. The teacher uses pre-planned open-ended questions during discourse to respond to class data and strengthen conceptual, transferable understandings  
       b. Students use evidence to back up statements and claims
-      c. Students do most of the talking to one another during discourse 
+      c. Students do most of the talking to one another during discourse 
   9. If applicable: teacher facilitates small group instruction to address student prerequisite knowledge and skills necessary to gain access to grade-level content.
   10. Teacher assesses the learning of every student by the end of class. 
 
@@ -133,20 +142,20 @@ Below is a guide to orient you to the plan. when specific cells are mentioned be
     - We express clear and HIGH expectations for kids. There is no question about what teachers expect. Kids feel successful. 
     - We create a structured, safe, productive classroom.
     - Structure and predictability can help psychological safety. 
-    - When kids are psychologically safe, there’s a higher chance of them taking risks and being vulnerable. 
+    - When kids are psychologically safe, there's a higher chance of them taking risks and being vulnerable. 
     - We build trust. 
     - We build norms. When we teach procedures:
-    - We teach them when it’s relevant. 
-    - We tell them what we’re going to to: 
-      "I’m going to teach you exactly what I expect when you walk in the room." 
-    - We tell/ask them why we’re doing this: 
-      "If you’re wondering why, it’s so we can start our class strong and safe every single day and get the most out of all of the time we have together." 
+    - We teach them when it's relevant. 
+    - We tell them what we're going to to: 
+      "I'm going to teach you exactly what I expect when you walk in the room." 
+    - We tell/ask them why we're doing this: 
+      "If you're wondering why, it's so we can start our class strong and safe every single day and get the most out of all of the time we have together." 
     - We express exactly what we want to see: when, etc. 
       "When we walk in, immediately pick up your white board and marker, take the shortest route to your seat, sit down and immediately start working on your Do Now." 
     - We check for understanding. 
     - We practice…maybe make a competition (timers, etc.) 
       "Does anyone think they could do this in under 30 seconds?" 
-    - When kids don’t meet our expectations, we practice again. 
+    - When kids don't meet our expectations, we practice again. 
   313 Routines and Procedures:
     - Entry (materials pick-up) "first five" 
     - Passing back white boards (if you want to pass them back) 
@@ -170,16 +179,16 @@ Below is a guide to orient you to the plan. when specific cells are mentioned be
   - Sounds like: Narrating behavior (individual, group and full class) and acknowledging when kids complete mastery checks. 
   ### Practice 4: All students, every day, make progress.
   Mindsets we want to build in teachers:
-    - I am the barometer of the classroom; if things are going well (or not), it’s a reflection of me.  
+    - I am the barometer of the classroom; if things are going well (or not), it's a reflection of me.  
     - I have (and want) to know my kids (and coaches->teachers) 
-    - It’s my job to reflect kids’ successes back to them. 
-    - It’s my job to ensure all my kids learn every day. 
+    - It's my job to reflect kids' successes back to them. 
+    - It's my job to ensure all my kids learn every day. 
     - All of my kids can learn. 
     - Kids can access grade-level content. I need to figure out how to give them access. 
   Mindsets we want to build in kids:
     - I can do this. 
     - I want to do this. 
-    - What I’m learning is important for my life.
+    - What I'm learning is important for my life.
     - I have agency. 
     - I am capable of getting a little bit better every day. 
     - The way I move in this class impacts everyone else.  
@@ -188,8 +197,8 @@ Below is a guide to orient you to the plan. when specific cells are mentioned be
     - Strategically monitoring, coaching, circulating, encouraging kids. 
     - Coming into class with a plan for small groups and 1:1 coaching: know who has been struggling to get through a Snorkl check.   
   ### Example Teacher Launch of Practice:
-    - When I say go, we’re going to start independent study time. Please open your laptops, log into Zearn or Snorkl, wherever you left off. My expectation for you is that every day you learn. On your mark, get set, go! 
-    - (Narrate) I see Jorge got started right away. The entire second column has started. Waiting on 2, 1– we’re at 100%
+    - When I say go, we're going to start independent study time. Please open your laptops, log into Zearn or Snorkl, wherever you left off. My expectation for you is that every day you learn. On your mark, get set, go! 
+    - (Narrate) I see Jorge got started right away. The entire second column has started. Waiting on 2, 1– we're at 100%
   ### Coach Actions to Support this:
     - Looked at the data, making it digestible 
     - Grounding conversations in data 
@@ -268,48 +277,8 @@ Below is a guide to orient you to the plan. when specific cells are mentioned be
   # RESPONSE STYLE
   - unless explicitly told otherwise, your responses should be tweet-length: generally 280 characters. If this means you need to elicit conversation in order to get your point across, do so. It should feel like having a natural conversation with a colleague, not an answer from an oracle. Make it feel naturally collaborative, building off the coach's thoughts and ideas – not just asking follow up questions. humor and levity are encouraged when appropriate.
   - if a user asks you to write an email, you should use the createDocument tool to create the email. If you don't have enough information as implied by the example email, ask the user for more information. Once you have the information, you should use the createDocument tool to create the email.
-`;
-
-export interface RequestHints {
-  latitude: Geo['latitude'];
-  longitude: Geo['longitude'];
-  city: Geo['city'];
-  country: Geo['country'];
-  currentDate: string;
-  currentTime: string;
-  timezone: string;
-  userName: string;
-}
-
-export const getRequestPromptFromHints = (requestHints: RequestHints) => `
-About the origin of user's request:
-- lat: ${requestHints.latitude}
-- lon: ${requestHints.longitude}
-- city: ${requestHints.city}
-- country: ${requestHints.country}
-- date: ${requestHints.currentDate}
-- time: ${requestHints.currentTime}
-- timezone: ${requestHints.timezone}
-- user: ${requestHints.userName}
-`;
-
-export const systemPrompt = ({
-  selectedChatModel,
-  requestHints,
-}: {
-  selectedChatModel: string;
-  requestHints: RequestHints;
-}) => {
-  const requestPrompt = getRequestPromptFromHints(requestHints);
-
-  if (selectedChatModel === 'chat-model-reasoning') {
-    return `${regularPrompt}\n\n${requestPrompt}`;
-  } else {
-    return `${regularPrompt}\n\n${requestPrompt}\n\n${artifactsPrompt}`;
-  }
-};
-
-export const codePrompt = `
+`,
+  codePrompt: `
 You are a Python code generator that creates self-contained, executable code snippets. When writing code:
 
 1. Each snippet should be complete and runnable on its own
@@ -333,13 +302,11 @@ def factorial(n):
     return result
 
 print(f"Factorial of 5 is: {factorial(5)}")
-`;
-
-export const sheetPrompt = `
+`,
+  sheetPrompt: `
 You are a spreadsheet creation assistant. Create a spreadsheet in csv format based on the given prompt. The spreadsheet should contain meaningful column headers and data.
-`;
-
-export const textPrompt = `
+`,
+  textPrompt: `
 You are a writing assistant that helps create documents. When asked to write an email, always use the below email example and template.
 
 ## EMAIL DRAFTS
@@ -391,9 +358,8 @@ Thanks,
 Maureen
 
 For other types of writing, write about the given topic. Markdown is supported. Use headings wherever appropriate.
-`;
-
-export const lookForSummaryPrompt = `
+`,
+  lookForSummaryPrompt: `
 Based on the current date, create a friendly, very short one sentence summary of what teachers should be focusing on this week. example: "This week, you should see teachers setting up the classroom and distributing Zearn logins and passwords." If the current date is before the first day of the summer school, acknowledge that and use the first week of the summer school (eg, "Summer school is almost here! teachers should focus on setting up the classroom and distributing Zearn logins and passwords.").
 
 # WEEK BY WEEK LOOK-FORS
@@ -476,28 +442,219 @@ Based on the current date, create a friendly, very short one sentence summary of
   Teacher look fors:
     -Narrate behaviors and work towards 100% engagement 
     -Share out data
+`,
+};
+
+// Cached prompts with metadata
+let cachedPrompts: Record<
+  string,
+  { content: string; langfusePrompt?: any }
+> | null = null;
+let lastFetch = 0;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+async function getPromptFromLangfuse(
+  name: string,
+): Promise<{ content: string; langfusePrompt?: any }> {
+  try {
+    const fetchedPrompt = await langfuse.getPrompt(name);
+    return {
+      content: fetchedPrompt.prompt,
+      langfusePrompt: fetchedPrompt.toJSON(),
+    };
+  } catch (error) {
+    // Debug logging for troubleshooting
+    if (process.env.NODE_ENV === 'development') {
+      console.log(
+        `[Langfuse] Failed to fetch prompt "${name}":`,
+        error instanceof Error ? error.message : String(error),
+      );
+      console.log(`[Langfuse] Environment check:`, {
+        hasSecretKey: !!process.env.LANGFUSE_SECRET_KEY,
+        hasPublicKey: !!process.env.LANGFUSE_PUBLIC_KEY,
+        host: process.env.LANGFUSE_HOST || 'default (us.cloud)',
+      });
+    }
+
+    // Silent fallback to hardcoded prompt
+    return {
+      content: fallbackPrompts[name as keyof typeof fallbackPrompts],
+      langfusePrompt: undefined,
+    };
+  }
+}
+
+async function getPromptsFromLangfuse(): Promise<
+  Record<string, { content: string; langfusePrompt?: any }>
+> {
+  if (cachedPrompts && Date.now() - lastFetch < CACHE_TTL) {
+    return cachedPrompts;
+  }
+
+  const promptNames = [
+    'artifactsPrompt',
+    'regularPrompt',
+    'codePrompt',
+    'sheetPrompt',
+    'textPrompt',
+    'lookForSummaryPrompt',
+  ];
+
+  const fetchedPrompts: Record<
+    string,
+    { content: string; langfusePrompt?: any }
+  > = {};
+
+  await Promise.allSettled(
+    promptNames.map(async (name) => {
+      fetchedPrompts[name] = await getPromptFromLangfuse(name);
+    }),
+  );
+
+  cachedPrompts = fetchedPrompts;
+  lastFetch = Date.now();
+
+  return cachedPrompts;
+}
+
+// Export individual prompts as getter functions that return both content and metadata
+export const getArtifactsPrompt = async (): Promise<{
+  content: string;
+  langfusePrompt?: any;
+}> => {
+  const prompts = await getPromptsFromLangfuse();
+  return prompts.artifactsPrompt;
+};
+
+export const getRegularPrompt = async (): Promise<{
+  content: string;
+  langfusePrompt?: any;
+}> => {
+  const prompts = await getPromptsFromLangfuse();
+  return prompts.regularPrompt;
+};
+
+export const getCodePrompt = async (): Promise<{
+  content: string;
+  langfusePrompt?: any;
+}> => {
+  const prompts = await getPromptsFromLangfuse();
+  return prompts.codePrompt;
+};
+
+export const getSheetPrompt = async (): Promise<{
+  content: string;
+  langfusePrompt?: any;
+}> => {
+  const prompts = await getPromptsFromLangfuse();
+  return prompts.sheetPrompt;
+};
+
+export const getTextPrompt = async (): Promise<{
+  content: string;
+  langfusePrompt?: any;
+}> => {
+  const prompts = await getPromptsFromLangfuse();
+  return prompts.textPrompt;
+};
+
+export const getLookForSummaryPrompt = async (): Promise<{
+  content: string;
+  langfusePrompt?: any;
+}> => {
+  const prompts = await getPromptsFromLangfuse();
+  return prompts.lookForSummaryPrompt;
+};
+
+// Legacy exports for backwards compatibility (now async)
+export const artifactsPrompt = getArtifactsPrompt();
+export const regularPrompt = getRegularPrompt();
+export const codePrompt = getCodePrompt();
+export const sheetPrompt = getSheetPrompt();
+export const textPrompt = getTextPrompt();
+export const lookForSummaryPrompt = getLookForSummaryPrompt();
+
+export interface RequestHints {
+  latitude: Geo['latitude'];
+  longitude: Geo['longitude'];
+  city: Geo['city'];
+  country: Geo['country'];
+  currentDate: string;
+  currentTime: string;
+  timezone: string;
+  userName: string;
+}
+
+export const getRequestPromptFromHints = (requestHints: RequestHints) => `
+About the origin of user's request:
+- lat: ${requestHints.latitude}
+- lon: ${requestHints.longitude}
+- city: ${requestHints.city}
+- country: ${requestHints.country}
+- date: ${requestHints.currentDate}
+- time: ${requestHints.currentTime}
+- timezone: ${requestHints.timezone}
+- user: ${requestHints.userName}
 `;
 
-export const updateDocumentPrompt = (
+export const systemPrompt = async ({
+  selectedChatModel,
+  requestHints,
+}: {
+  selectedChatModel: string;
+  requestHints: RequestHints;
+}) => {
+  const requestPrompt = getRequestPromptFromHints(requestHints);
+  const regularPrompt = await getRegularPrompt();
+
+  if (selectedChatModel === 'chat-model-reasoning') {
+    return {
+      content: `${regularPrompt.content}\n\n${requestPrompt}`,
+      langfusePrompt: regularPrompt.langfusePrompt,
+    };
+  } else {
+    const artifactsPrompt = await getArtifactsPrompt();
+    return {
+      content: `${regularPrompt.content}\n\n${requestPrompt}\n\n${artifactsPrompt.content}`,
+      langfusePrompt: regularPrompt.langfusePrompt,
+    };
+  }
+};
+
+export const updateDocumentPrompt = async (
   currentContent: string | null,
   type: ArtifactKind,
-) =>
-  type === 'text'
-    ? `\
+) => {
+  if (type === 'text') {
+    const textPrompt = await getTextPrompt();
+    return {
+      content: `\
 Improve the following contents of the document based on the given prompt.
 
 ${currentContent}
-`
-    : type === 'code'
-      ? `\
+`,
+      langfusePrompt: textPrompt.langfusePrompt,
+    };
+  } else if (type === 'code') {
+    const codePrompt = await getCodePrompt();
+    return {
+      content: `\
 Improve the following code snippet based on the given prompt.
 
 ${currentContent}
-`
-      : type === 'sheet'
-        ? `\
+`,
+      langfusePrompt: codePrompt.langfusePrompt,
+    };
+  } else if (type === 'sheet') {
+    const sheetPrompt = await getSheetPrompt();
+    return {
+      content: `\
 Improve the following spreadsheet based on the given prompt.
 
 ${currentContent}
-`
-        : '';
+`,
+      langfusePrompt: sheetPrompt.langfusePrompt,
+    };
+  }
+  return { content: '', langfusePrompt: undefined };
+};

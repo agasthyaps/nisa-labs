@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { streamObject } from 'ai';
 import { myProvider } from '@/lib/ai/providers';
-import { codePrompt, updateDocumentPrompt } from '@/lib/ai/prompts';
+import { getCodePrompt, updateDocumentPrompt } from '@/lib/ai/prompts';
 import { createDocumentHandler } from '@/lib/artifacts/server';
 
 export const codeDocumentHandler = createDocumentHandler<'code'>({
@@ -14,9 +14,10 @@ export const codeDocumentHandler = createDocumentHandler<'code'>({
       ? `Title: ${title}\n\nContext from conversation: ${context}\n\nGenerate the code based on the title and context provided.`
       : title;
 
+    const codePrompt = await getCodePrompt();
     const { fullStream } = streamObject({
       model: myProvider.languageModel('artifact-model'),
-      system: codePrompt,
+      system: codePrompt.content,
       prompt,
       schema: z.object({
         code: z.string(),
@@ -46,9 +47,11 @@ export const codeDocumentHandler = createDocumentHandler<'code'>({
   onUpdateDocument: async ({ document, description, dataStream }) => {
     let draftContent = '';
 
+    const updatePrompt = await updateDocumentPrompt(document.content, 'code');
     const { fullStream } = streamObject({
       model: myProvider.languageModel('artifact-model'),
-      system: updateDocumentPrompt(document.content, 'code'),
+      system: updatePrompt.content,
+
       prompt: description,
       schema: z.object({
         code: z.string(),

@@ -1,7 +1,7 @@
 import { smoothStream, streamText } from 'ai';
 import { myProvider } from '@/lib/ai/providers';
 import { createDocumentHandler } from '@/lib/artifacts/server';
-import { updateDocumentPrompt, textPrompt } from '@/lib/ai/prompts';
+import { updateDocumentPrompt, getTextPrompt } from '@/lib/ai/prompts';
 
 export const textDocumentHandler = createDocumentHandler<'text'>({
   kind: 'text',
@@ -13,9 +13,11 @@ export const textDocumentHandler = createDocumentHandler<'text'>({
       ? `Title: ${title}\n\nContext from conversation: ${context}\n\nGenerate the document based on the title and context provided.`
       : title;
 
+    const textPrompt = await getTextPrompt();
     const { fullStream } = streamText({
       model: myProvider.languageModel('artifact-model'),
-      system: textPrompt,
+      system: textPrompt.content,
+
       experimental_transform: smoothStream({ chunking: 'word' }),
       prompt,
     });
@@ -40,9 +42,11 @@ export const textDocumentHandler = createDocumentHandler<'text'>({
   onUpdateDocument: async ({ document, description, dataStream }) => {
     let draftContent = '';
 
+    const updatePrompt = await updateDocumentPrompt(document.content, 'text');
     const { fullStream } = streamText({
       model: myProvider.languageModel('artifact-model'),
-      system: updateDocumentPrompt(document.content, 'text'),
+      system: updatePrompt.content,
+
       experimental_transform: smoothStream({ chunking: 'word' }),
       prompt: description,
       experimental_providerMetadata: {

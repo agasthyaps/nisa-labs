@@ -1,6 +1,6 @@
 import { generateText } from 'ai';
 import { myProvider } from '@/lib/ai/providers';
-import { lookForSummaryPrompt } from '@/lib/ai/prompts';
+import { getLookForSummaryPrompt } from '@/lib/ai/prompts';
 
 export async function GET() {
   try {
@@ -11,13 +11,23 @@ export async function GET() {
       day: 'numeric',
     });
 
-    const promptWithDate = `${lookForSummaryPrompt}
+    const lookForSummaryPrompt = await getLookForSummaryPrompt();
+    const promptWithDate = `${lookForSummaryPrompt.content}
 
 Current date: ${currentDate}`;
 
     const result = await generateText({
       model: myProvider.languageModel('title-model'),
       prompt: promptWithDate,
+      experimental_telemetry: {
+        isEnabled: true,
+        functionId: 'look-for-summary',
+        metadata: {
+          ...(lookForSummaryPrompt.langfusePrompt && {
+            langfusePrompt: lookForSummaryPrompt.langfusePrompt,
+          }),
+        },
+      },
     });
 
     return Response.json({ summary: result.text });
