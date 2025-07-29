@@ -4,7 +4,20 @@ import { ChatSDKError } from '@/lib/errors';
 import { z } from 'zod';
 
 const settingsSchema = z.object({
-  googleSheetsUrl: z.string().url().optional(),
+  googleSheetsUrl: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || val === '' || z.string().url().safeParse(val).success,
+      { message: 'Must be a valid URL or empty' },
+    ),
+  googleDriveFolderUrl: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || val === '' || z.string().url().safeParse(val).success,
+      { message: 'Must be a valid URL or empty' },
+    ),
 });
 
 export async function GET() {
@@ -19,6 +32,7 @@ export async function GET() {
 
     return Response.json({
       googleSheetsUrl: settings?.googleSheetsUrl || '',
+      googleDriveFolderUrl: settings?.googleDriveFolderUrl || '',
     });
   } catch (error) {
     console.error('Error getting settings:', error);
@@ -35,11 +49,14 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { googleSheetsUrl } = settingsSchema.parse(body);
+    const { googleSheetsUrl, googleDriveFolderUrl } =
+      settingsSchema.parse(body);
 
     await saveUserSettings({
       userId: session.user.id,
-      googleSheetsUrl,
+      googleSheetsUrl: googleSheetsUrl === '' ? undefined : googleSheetsUrl,
+      googleDriveFolderUrl:
+        googleDriveFolderUrl === '' ? undefined : googleDriveFolderUrl,
     });
 
     return Response.json({ success: true });

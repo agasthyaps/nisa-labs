@@ -43,6 +43,12 @@ import {
   readDecisionLog,
   // appendGoogleSheet,
 } from '@/lib/ai/tools/google-sheets';
+import {
+  listKnowledgeBaseFiles,
+  readKnowledgeBaseFile,
+  reviewNotes,
+  updateNotes,
+} from '@/lib/ai/tools/google-drive';
 
 export const maxDuration = 60;
 
@@ -272,6 +278,10 @@ export async function POST(request: Request) {
                   'writeGoogleSheet',
                   'addNewDecisionLog',
                   'readDecisionLog',
+                  'listKnowledgeBaseFiles',
+                  'readKnowledgeBaseFile',
+                  'reviewNotes',
+                  'updateNotes',
                   // 'appendGoogleSheet',
                 ],
           experimental_transform: smoothStream({ chunking: 'word' }),
@@ -288,6 +298,10 @@ export async function POST(request: Request) {
             writeGoogleSheet: writeGoogleSheet({ session }),
             addNewDecisionLog: addNewDecisionLog({ session }),
             readDecisionLog: readDecisionLog({ session }),
+            listKnowledgeBaseFiles: listKnowledgeBaseFiles({ session }),
+            readKnowledgeBaseFile: readKnowledgeBaseFile({ session }),
+            reviewNotes: reviewNotes({ session }),
+            updateNotes: updateNotes({ session }),
             // appendGoogleSheet: appendGoogleSheet({ session }),
           },
           onFinish: async ({ response }) => {

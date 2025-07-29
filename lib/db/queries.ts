@@ -555,9 +555,11 @@ export async function getUserSettings({ userId }: { userId: string }) {
 export async function saveUserSettings({
   userId,
   googleSheetsUrl,
+  googleDriveFolderUrl,
 }: {
   userId: string;
   googleSheetsUrl?: string;
+  googleDriveFolderUrl?: string;
 }) {
   try {
     const existingSettings = await getUserSettings({ userId });
@@ -567,6 +569,7 @@ export async function saveUserSettings({
         .update(userSettings)
         .set({
           googleSheetsUrl,
+          googleDriveFolderUrl,
           updatedAt: new Date(),
         })
         .where(eq(userSettings.userId, userId))
@@ -577,6 +580,7 @@ export async function saveUserSettings({
         .values({
           userId,
           googleSheetsUrl,
+          googleDriveFolderUrl,
         })
         .returning();
     }

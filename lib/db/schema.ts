@@ -177,6 +177,7 @@ export const userSettings = pgTable(
       .notNull()
       .references(() => user.id),
     googleSheetsUrl: text('googleSheetsUrl'),
+    googleDriveFolderUrl: text('googleDriveFolderUrl'),
     createdAt: timestamp('createdAt').notNull().defaultNow(),
     updatedAt: timestamp('updatedAt').notNull().defaultNow(),
   },

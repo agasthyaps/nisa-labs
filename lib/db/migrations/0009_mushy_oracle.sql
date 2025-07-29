@@ -1,0 +1,1 @@
+ALTER TABLE "UserSettings" RENAME COLUMN "googleDriveFolderId" TO "googleDriveFolderUrl";

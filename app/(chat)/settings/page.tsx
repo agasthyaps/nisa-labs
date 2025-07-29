@@ -18,6 +18,7 @@ import { LoaderIcon } from '@/components/icons';
 export default function SettingsPage() {
   const { data: session, status } = useSession();
   const [googleSheetsUrl, setGoogleSheetsUrl] = useState('');
+  const [googleDriveFolderUrl, setGoogleDriveFolderUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -34,6 +35,7 @@ export default function SettingsPage() {
       if (response.ok) {
         const settings = await response.json();
         setGoogleSheetsUrl(settings.googleSheetsUrl || '');
+        setGoogleDriveFolderUrl(settings.googleDriveFolderUrl || '');
       }
     } catch (error) {
       console.error('Failed to load settings:', error);
@@ -64,6 +66,7 @@ export default function SettingsPage() {
         },
         body: JSON.stringify({
           googleSheetsUrl,
+          googleDriveFolderUrl,
         }),
       });
 
@@ -149,6 +152,43 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Google Drive Knowledge Base</CardTitle>
+            <CardDescription>
+              Configure your Google Drive folder to enable reading from and
+              taking notes about your knowledge base documents.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="googleDriveFolderUrl">
+                Google Drive Folder URL
+              </Label>
+              <Input
+                id="googleDriveFolderUrl"
+                type="url"
+                placeholder="https://drive.google.com/drive/folders/your-folder-id"
+                value={googleDriveFolderUrl}
+                onChange={(e) => setGoogleDriveFolderUrl(e.target.value)}
+                className="mt-1"
+              />
+              <p className="text-sm text-muted-foreground mt-1">
+                Paste the full URL of your Google Drive folder. Make sure the
+                folder is shared with the service account for read access.
+              </p>
+            </div>
+
+            <Button
+              onClick={saveSettings}
+              disabled={isSaving}
+              className="w-full"
+            >
+              {isSaving ? <LoaderIcon /> : 'Save Settings'}
+            </Button>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>How to Use</CardTitle>
@@ -158,7 +198,7 @@ export default function SettingsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <h3 className="font-semibold mb-2">Setup Instructions:</h3>
+              <h3 className="font-semibold mb-2">Google Sheets Setup:</h3>
               <ol className="list-decimal list-inside space-y-1 text-sm">
                 <li>
                   Create a Google Sheet and share it with your service account
@@ -175,6 +215,56 @@ export default function SettingsPage() {
                   </ul>
                 </li>
               </ol>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-2">
+                Google Drive Knowledge Base Setup:
+              </h3>
+              <ol className="list-decimal list-inside space-y-1 text-sm">
+                <li>
+                  Create a Google Drive folder and share it{' '}
+                  <strong>directly</strong> with your service account email with{' '}
+                  <strong>Editor</strong> permissions (not "anyone with the
+                  link")
+                </li>
+                <li>
+                  <strong>Important:</strong> Create an empty text file named
+                  &ldquo;nisa_notes.txt&rdquo; in your folder
+                </li>
+                <li>
+                  <strong>Critical:</strong> Share the
+                  &ldquo;nisa_notes.txt&rdquo; file
+                  <strong>directly</strong> with your service account email with{' '}
+                  <strong>Editor</strong> permissions
+                </li>
+                <li>Copy the Google Drive folder URL and paste it above</li>
+                <li>Save your settings</li>
+                <li>
+                  The assistant can now:
+                  <ul className="list-disc list-inside ml-4 mt-1">
+                    <li>List all files in your knowledge base</li>
+                    <li>
+                      Read content from Google Docs, Sheets, text files, and
+                      markdown files
+                    </li>
+                    <li>
+                      Update notes in the &ldquo;nisa_notes.txt&rdquo; file
+                      about what it learns
+                    </li>
+                    <li>Reference specific documents when giving advice</li>
+                  </ul>
+                </li>
+              </ol>
+              <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-md">
+                <p className="text-sm text-amber-800">
+                  <strong>Important:</strong> Service accounts require explicit
+                  sharing with the exact service account email address. "Anyone
+                  with the link" permissions will NOT work. You must share both
+                  the folder and the nisa_notes.txt file directly with your
+                  service account email.
+                </p>
+              </div>
             </div>
 
             <div>

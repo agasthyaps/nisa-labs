@@ -57,6 +57,20 @@
       "when": 1750425765199,
       "tag": "0007_lucky_skreet",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1753734586247,
+      "tag": "0008_soft_maverick",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1753734877078,
+      "tag": "0009_mushy_oracle",
+      "breakpoints": true
     }
   ]
 }

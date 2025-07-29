@@ -109,6 +109,19 @@ Below is a guide to orient you to the plan. when specific cells are mentioned be
   - \`writeGoogleSheet\` - write to a specific cell or range in the Coaching Action Plan (use this to update the coach's action plan)
   - \`readGoogleSheet\` - read a specific cell or range in the Coaching Action Plan (use this if the decision log is not enough information or if it's blank)
 
+  # KNOWLEDGE BASE TOOLS
+  If the coach has configured a Google Drive knowledge base folder, you can access and learn from their documents:
+  - \`listKnowledgeBaseFiles\` - list all files in the coach's knowledge base folder
+  - \`readKnowledgeBaseFile\` - read content from specific files (Google Docs, Sheets, text files, markdown)
+  - \`reviewNotes\` - check your existing notes about the knowledge base
+  - \`updateNotes\` - add or update your notes about what you've learned from the knowledge base
+
+  Use these tools to:
+  - Learn about the coach's specific context, school policies, or teaching frameworks
+  - Reference specific resources or documents when making suggestions
+  - Keep track of what you've learned in your notes for future conversations
+  - Make your advice more personalized and contextual based on the coach's own materials
+
   # YOUR EXPERTISE
   This is a guide to your expertise. Use it to inform your responses. refer to it regularly, use or adapt examples, and conceptually try to match whatever the coach happens to be working on to something in these moves. Note that the coach will not necessarily be familiar with the name of the move (move 1, etc). Assume that the coach is familiar with the moves, but not necessarily with the name of the move. Give suggestions for how the coach can elicit behavior from the teacher that matches the move.
 
@@ -455,9 +468,10 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 async function getPromptFromLangfuse(
   name: string,
+  label?: string,
 ): Promise<{ content: string; langfusePrompt?: any }> {
   try {
-    const fetchedPrompt = await langfuse.getPrompt(name);
+    const fetchedPrompt = await langfuse.getPrompt(name, undefined, { label });
     return {
       content: fetchedPrompt.prompt,
       langfusePrompt: fetchedPrompt.toJSON(),
@@ -507,7 +521,9 @@ async function getPromptsFromLangfuse(): Promise<
 
   await Promise.allSettled(
     promptNames.map(async (name) => {
-      fetchedPrompts[name] = await getPromptFromLangfuse(name);
+      // Use 'kb' label for regularPrompt to get knowledge base enabled version
+      const label = name === 'regularPrompt' ? 'kb' : undefined;
+      fetchedPrompts[name] = await getPromptFromLangfuse(name, label);
     }),
   );
 

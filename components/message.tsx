@@ -6,7 +6,12 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { memo, useState, useEffect } from 'react';
 import type { Vote } from '@/lib/db/schema';
 import { DocumentToolCall, DocumentToolResult } from './document';
-import { PencilEditIcon, SparklesIcon } from './icons';
+import {
+  PencilEditIcon,
+  SparklesIcon,
+  InfoIcon,
+  CheckCircleFillIcon,
+} from './icons';
 import { Markdown } from './markdown';
 import { MessageActions } from './message-actions';
 import { PreviewAttachment } from './preview-attachment';
@@ -19,6 +24,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { MessageEditor } from './message-editor';
 import { DocumentPreview } from './document-preview';
 import { MessageReasoning } from './message-reasoning';
+import { SimpleToolResult } from './simple-tool-result';
 import type { UseChatHelpers } from '@ai-sdk/react';
 
 const PurePreviewMessage = ({
@@ -160,7 +166,6 @@ const PurePreviewMessage = ({
 
                 if (state === 'call') {
                   const { args } = toolInvocation;
-
                   return (
                     <div
                       key={toolCallId}
@@ -168,51 +173,54 @@ const PurePreviewMessage = ({
                         skeleton: ['getWeather'].includes(toolName),
                       })}
                     >
-                      {toolName === 'getWeather' ? (
-                        <Weather />
-                      ) : toolName === 'createDocument' ? (
-                        <DocumentPreview isReadonly={isReadonly} args={args} />
-                      ) : toolName === 'updateDocument' ? (
-                        <DocumentToolCall
-                          type="update"
-                          args={args}
-                          isReadonly={isReadonly}
-                        />
-                      ) : toolName === 'requestSuggestions' ? (
-                        <DocumentToolCall
-                          type="request-suggestions"
-                          args={args}
-                          isReadonly={isReadonly}
-                        />
-                      ) : toolName === 'readGoogleSheet' ||
-                        toolName === 'writeGoogleSheet' ||
-                        toolName === 'appendGoogleSheet' ||
-                        toolName === 'addNewDecisionLog' ||
-                        toolName === 'readDecisionLog' ? (
-                        <div className="text-sm text-muted-foreground">
-                          {toolName === 'readGoogleSheet' &&
-                            'Reading from Google Sheet...'}
-                          {toolName === 'writeGoogleSheet' &&
-                            'Writing to Google Sheet...'}
-                          {toolName === 'appendGoogleSheet' &&
-                            'Appending to Google Sheet...'}
-                          {toolName === 'addNewDecisionLog' &&
-                            'Adding new decision log entry...'}
-                          {toolName === 'readDecisionLog' &&
-                            'Reading decision log...'}
-                        </div>
-                      ) : toolName === 'transcribeImage' ? (
-                        <div className="text-sm text-muted-foreground">
-                          Processing image...
-                        </div>
-                      ) : null}
+                      <div className="flex items-center gap-3 text-sm text-muted-foreground py-2">
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{
+                            duration: 2,
+                            repeat: Number.POSITIVE_INFINITY,
+                            ease: 'linear',
+                          }}
+                        >
+                          <InfoIcon size={14} />
+                        </motion.div>
+                        <span>
+                          {toolName === 'getWeather' &&
+                            'Getting weather information...'}
+                          {toolName === 'createDocument' &&
+                            'Creating document...'}
+                          {toolName === 'updateDocument' &&
+                            'Updating document...'}
+                          {toolName === 'requestSuggestions' &&
+                            'Requesting suggestions...'}
+                          {(toolName === 'readGoogleSheet' ||
+                            toolName === 'writeGoogleSheet' ||
+                            toolName === 'appendGoogleSheet' ||
+                            toolName === 'addNewDecisionLog' ||
+                            toolName === 'readDecisionLog') &&
+                            `${toolName}...`}
+                          {toolName === 'transcribeImage' &&
+                            'Processing image...'}
+                          {![
+                            'getWeather',
+                            'createDocument',
+                            'updateDocument',
+                            'requestSuggestions',
+                            'readGoogleSheet',
+                            'writeGoogleSheet',
+                            'appendGoogleSheet',
+                            'addNewDecisionLog',
+                            'readDecisionLog',
+                            'transcribeImage',
+                          ].includes(toolName) && `Executing ${toolName}...`}
+                        </span>
+                      </div>
                     </div>
                   );
                 }
 
                 if (state === 'result') {
                   const { result } = toolInvocation;
-
                   return (
                     <div key={toolCallId}>
                       {toolName === 'getWeather' ? (
@@ -238,21 +246,33 @@ const PurePreviewMessage = ({
                         toolName === 'writeGoogleSheet' ||
                         toolName === 'appendGoogleSheet' ||
                         toolName === 'addNewDecisionLog' ||
-                        toolName === 'readDecisionLog' ? (
-                        <GoogleSheetsResult result={result} />
-                      ) : toolName === 'transcribeImage' ? (
-                        <div className="bg-muted p-4 rounded-lg">
-                          <div className="text-sm font-medium text-muted-foreground mb-2">
-                            Transcribed Image:
-                          </div>
-                          <div className="whitespace-pre-wrap text-sm">
-                            {result.content ||
-                              result.error ||
-                              'No content available'}
+                        toolName === 'readDecisionLog' ||
+                        toolName === 'listKnowledgeBaseFiles' ||
+                        toolName === 'readKnowledgeBaseFile' ||
+                        toolName === 'reviewNotes' ||
+                        toolName === 'updateNotes' ||
+                        toolName === 'transcribeImage' ? (
+                        <SimpleToolResult
+                          key={toolCallId}
+                          toolName={toolName}
+                          result={result}
+                        />
+                      ) : (
+                        <div className="border rounded-lg overflow-hidden bg-background">
+                          <div className="p-3">
+                            <div className="flex items-center gap-3 mb-2">
+                              <div className="text-green-600">
+                                <CheckCircleFillIcon size={16} />
+                              </div>
+                              <div className="text-sm font-medium">
+                                {toolName} completed
+                              </div>
+                            </div>
+                            <pre className="text-xs bg-muted p-3 rounded border overflow-x-auto whitespace-pre-wrap">
+                              {JSON.stringify(result, null, 2)}
+                            </pre>
                           </div>
                         </div>
-                      ) : (
-                        <pre>{JSON.stringify(result, null, 2)}</pre>
                       )}
                     </div>
                   );
