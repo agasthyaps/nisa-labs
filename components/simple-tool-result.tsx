@@ -87,6 +87,42 @@ const getSimpleDescription = (
         hasError: false,
       };
 
+    case 'listExpertiseFiles':
+      return {
+        title: 'Expertise files retrieved',
+        summary: result.files?.length
+          ? `Found ${result.files.length} expertise files`
+          : 'Files listed',
+        hasError: false,
+      };
+
+    case 'readExpertiseFile':
+      return {
+        title: 'Expertise file retrieved',
+        summary: result.content
+          ? `File loaded (${result.content.length} characters)`
+          : 'File retrieved',
+        hasError: false,
+      };
+
+    case 'searchExpertiseContent':
+      return {
+        title: 'Expertise content searched',
+        summary: result.files?.length
+          ? `Found ${result.files.length} matching files`
+          : 'Search completed',
+        hasError: false,
+      };
+
+    case 'getExpertiseOverview':
+      return {
+        title: 'Expertise overview retrieved',
+        summary: result.overview
+          ? `Overview loaded (${result.overview.length} characters)`
+          : 'Overview retrieved',
+        hasError: false,
+      };
+
     default:
       return {
         title: `${toolName} completed`,
@@ -148,6 +184,24 @@ export function SimpleToolResult({ toolName, result }: SimpleToolResultProps) {
                 </div>
                 <div className="text-sm whitespace-pre-wrap">
                   {result.content || result.error || 'No content available'}
+                </div>
+              </div>
+            ) : toolName === 'readExpertiseFile' ? (
+              <div className="bg-background p-3 rounded border">
+                <div className="text-sm font-medium text-muted-foreground mb-2">
+                  File Content:
+                </div>
+                <div className="text-sm whitespace-pre-wrap max-h-96 overflow-y-auto">
+                  {result.content || result.error || 'No content available'}
+                </div>
+              </div>
+            ) : toolName === 'getExpertiseOverview' ? (
+              <div className="bg-background p-3 rounded border">
+                <div className="text-sm font-medium text-muted-foreground mb-2">
+                  Repository Overview:
+                </div>
+                <div className="text-sm whitespace-pre-wrap max-h-96 overflow-y-auto">
+                  {result.overview || result.error || 'No overview available'}
                 </div>
               </div>
             ) : (

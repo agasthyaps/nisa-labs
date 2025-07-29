@@ -197,7 +197,15 @@ const PurePreviewMessage = ({
                             toolName === 'writeGoogleSheet' ||
                             toolName === 'appendGoogleSheet' ||
                             toolName === 'addNewDecisionLog' ||
-                            toolName === 'readDecisionLog') &&
+                            toolName === 'readDecisionLog' ||
+                            toolName === 'listKnowledgeBaseFiles' ||
+                            toolName === 'readKnowledgeBaseFile' ||
+                            toolName === 'reviewNotes' ||
+                            toolName === 'updateNotes' ||
+                            toolName === 'listExpertiseFiles' ||
+                            toolName === 'readExpertiseFile' ||
+                            toolName === 'searchExpertiseContent' ||
+                            toolName === 'getExpertiseOverview') &&
                             `${toolName}...`}
                           {toolName === 'transcribeImage' &&
                             'Processing image...'}
@@ -212,6 +220,14 @@ const PurePreviewMessage = ({
                             'addNewDecisionLog',
                             'readDecisionLog',
                             'transcribeImage',
+                            'listKnowledgeBaseFiles',
+                            'readKnowledgeBaseFile',
+                            'reviewNotes',
+                            'updateNotes',
+                            'listExpertiseFiles',
+                            'readExpertiseFile',
+                            'searchExpertiseContent',
+                            'getExpertiseOverview',
                           ].includes(toolName) && `Executing ${toolName}...`}
                         </span>
                       </div>
@@ -251,7 +267,11 @@ const PurePreviewMessage = ({
                         toolName === 'readKnowledgeBaseFile' ||
                         toolName === 'reviewNotes' ||
                         toolName === 'updateNotes' ||
-                        toolName === 'transcribeImage' ? (
+                        toolName === 'transcribeImage' ||
+                        toolName === 'listExpertiseFiles' ||
+                        toolName === 'readExpertiseFile' ||
+                        toolName === 'searchExpertiseContent' ||
+                        toolName === 'getExpertiseOverview' ? (
                         <SimpleToolResult
                           key={toolCallId}
                           toolName={toolName}

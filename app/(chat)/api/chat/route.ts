@@ -49,6 +49,12 @@ import {
   reviewNotes,
   updateNotes,
 } from '@/lib/ai/tools/google-drive';
+import {
+  listExpertiseFiles,
+  readExpertiseFile,
+  searchExpertiseContent,
+  getExpertiseOverview,
+} from '@/lib/ai/tools/github-expertise';
 
 export const maxDuration = 60;
 
@@ -259,6 +265,7 @@ export async function POST(request: Request) {
         const systemPromptData = await systemPrompt({
           selectedChatModel,
           requestHints,
+          userId: session.user.id,
         });
         const result = streamText({
           model: myProvider.languageModel(selectedChatModel),
@@ -282,6 +289,10 @@ export async function POST(request: Request) {
                   'readKnowledgeBaseFile',
                   'reviewNotes',
                   'updateNotes',
+                  'listExpertiseFiles',
+                  'readExpertiseFile',
+                  'searchExpertiseContent',
+                  'getExpertiseOverview',
                   // 'appendGoogleSheet',
                 ],
           experimental_transform: smoothStream({ chunking: 'word' }),
@@ -302,6 +313,10 @@ export async function POST(request: Request) {
             readKnowledgeBaseFile: readKnowledgeBaseFile({ session }),
             reviewNotes: reviewNotes({ session }),
             updateNotes: updateNotes({ session }),
+            listExpertiseFiles: listExpertiseFiles({ session }),
+            readExpertiseFile: readExpertiseFile({ session }),
+            searchExpertiseContent: searchExpertiseContent({ session }),
+            getExpertiseOverview: getExpertiseOverview({ session }),
             // appendGoogleSheet: appendGoogleSheet({ session }),
           },
           onFinish: async ({ response }) => {

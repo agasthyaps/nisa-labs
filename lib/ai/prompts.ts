@@ -542,6 +542,116 @@ export const getArtifactsPrompt = async (): Promise<{
   return prompts.artifactsPrompt;
 };
 
+// Helper function to get GitHub expertise overview
+async function getGitHubExpertiseOverview(): Promise<string> {
+  try {
+    if (!process.env.GITHUB_PERSONAL_ACCESS_TOKEN) {
+      return '';
+    }
+
+    const { Octokit } = await import('@octokit/rest');
+    const octokit = new Octokit({
+      auth: process.env.GITHUB_PERSONAL_ACCESS_TOKEN,
+    });
+
+    const response = await octokit.rest.repos.getContent({
+      owner: 'agasthyaps',
+      repo: 'nisasbrain',
+      path: 'README.md',
+      mediaType: {
+        format: 'raw',
+      },
+    });
+
+    return response.data as unknown as string;
+  } catch (error) {
+    console.error('Failed to fetch GitHub expertise overview:', error);
+    return '';
+  }
+}
+
+// Helper function to get knowledge base notes
+async function getKnowledgeBaseNotes(userId: string): Promise<string> {
+  try {
+    const { getUserSettings } = await import('@/lib/db/queries');
+    const { google } = await import('googleapis');
+
+    const userSettings = await getUserSettings({ userId });
+
+    if (!userSettings?.googleDriveFolderUrl) {
+      return '';
+    }
+
+    // Extract folder ID from URL
+    const extractFolderId = (url: string): string | null => {
+      const folderMatch = url.match(/\/folders\/([a-zA-Z0-9-_]+)/);
+      if (folderMatch) return folderMatch[1];
+      const idMatch = url.match(/[?&]id=([a-zA-Z0-9-_]+)/);
+      if (idMatch) return idMatch[1];
+      return null;
+    };
+
+    const folderId = extractFolderId(userSettings.googleDriveFolderUrl);
+    if (!folderId) {
+      return '';
+    }
+
+    // Get Google Drive client
+    const jsonCredentials = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_FILE;
+    const base64Credentials =
+      process.env.GOOGLE_SERVICE_ACCOUNT_KEY_FILE_BASE64;
+
+    let credentials: { client_email: string; private_key: string };
+    if (base64Credentials) {
+      const decoded = Buffer.from(base64Credentials, 'base64').toString(
+        'utf-8',
+      );
+      credentials = JSON.parse(decoded);
+    } else if (jsonCredentials) {
+      credentials = JSON.parse(jsonCredentials);
+    } else {
+      return '';
+    }
+
+    const auth = new google.auth.GoogleAuth({
+      credentials,
+      scopes: ['https://www.googleapis.com/auth/drive'],
+    });
+
+    const authClient = await auth.getClient();
+    const drive = google.drive('v3');
+
+    // Look for nisa_notes.txt file
+    const searchResponse = await drive.files.list({
+      auth: authClient as any,
+      q: `'${folderId}' in parents and name='nisa_notes.txt' and trashed=false`,
+      fields: 'files(id,name)',
+    });
+
+    const files = searchResponse.data.files || [];
+    if (files.length === 0) {
+      return '';
+    }
+
+    const file = files[0];
+    if (!file.id) {
+      return '';
+    }
+
+    // Read the notes file content
+    const response = await drive.files.get({
+      auth: authClient as any,
+      fileId: file.id,
+      alt: 'media',
+    });
+
+    return response.data as string;
+  } catch (error) {
+    console.error('Failed to fetch knowledge base notes:', error);
+    return '';
+  }
+}
+
 export const getRegularPrompt = async (): Promise<{
   content: string;
   langfusePrompt?: any;
@@ -610,31 +720,44 @@ About the origin of user's request:
 - date: ${requestHints.currentDate}
 - time: ${requestHints.currentTime}
 - timezone: ${requestHints.timezone}
-- user: ${requestHints.userName}
+- user's name (use this to address the user): ${requestHints.userName}
 `;
 
 export const systemPrompt = async ({
   selectedChatModel,
   requestHints,
+  userId,
 }: {
   selectedChatModel: string;
   requestHints: RequestHints;
+  userId?: string;
 }) => {
   const requestPrompt = getRequestPromptFromHints(requestHints);
   const regularPrompt = await getRegularPrompt();
 
-  if (selectedChatModel === 'chat-model-reasoning') {
-    return {
-      content: `${regularPrompt.content}\n\n${requestPrompt}`,
-      langfusePrompt: regularPrompt.langfusePrompt,
-    };
-  } else {
-    const artifactsPrompt = await getArtifactsPrompt();
-    return {
-      content: `${regularPrompt.content}\n\n${requestPrompt}\n\n${artifactsPrompt.content}`,
-      langfusePrompt: regularPrompt.langfusePrompt,
-    };
+  // Fetch GitHub expertise overview and knowledge base notes
+  const expertiseOverview = await getGitHubExpertiseOverview();
+  const knowledgeBaseNotes = userId ? await getKnowledgeBaseNotes(userId) : '';
+
+  // Build the system prompt content
+  let systemContent = `${regularPrompt.content}\n\n${requestPrompt}`;
+
+  // Add GitHub expertise content at the end if available
+  if (expertiseOverview) {
+    systemContent += `\n\n# PEDAGOGICAL EXPERTISE KNOWLEDGE BASE
+${expertiseOverview}`;
   }
+
+  // Add knowledge base notes if available
+  if (knowledgeBaseNotes) {
+    systemContent += `\n\n# USER KNOWLEDGE BASE OVERVIEW (nisa_notes.txt content at start of conversation)
+${knowledgeBaseNotes}`;
+  }
+
+  return {
+    content: systemContent,
+    langfusePrompt: regularPrompt.langfusePrompt,
+  };
 };
 
 export const updateDocumentPrompt = async (
