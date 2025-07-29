@@ -712,11 +712,7 @@ export interface RequestHints {
 }
 
 export const getRequestPromptFromHints = (requestHints: RequestHints) => `
-About the origin of user's request:
-- lat: ${requestHints.latitude}
-- lon: ${requestHints.longitude}
-- city: ${requestHints.city}
-- country: ${requestHints.country}
+SPECIFIC USER INFORMATION:
 - date: ${requestHints.currentDate}
 - time: ${requestHints.currentTime}
 - timezone: ${requestHints.timezone}

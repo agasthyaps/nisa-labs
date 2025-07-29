@@ -48,7 +48,7 @@ export default function Page() {
           router.push('/welcome');
         });
     }
-  }, [state.status, hasRedirected, router]);
+  }, [state.status, hasRedirected, router, updateSession]);
 
   const handleSubmit = async (formData: FormData) => {
     setEmail(formData.get('email') as string);

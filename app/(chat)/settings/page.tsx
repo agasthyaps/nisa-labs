@@ -225,8 +225,8 @@ export default function SettingsPage() {
                 <li>
                   Create a Google Drive folder and share it{' '}
                   <strong>directly</strong> with your service account email with{' '}
-                  <strong>Editor</strong> permissions (not "anyone with the
-                  link")
+                  <strong>Editor</strong> permissions (not &ldquo;anyone with
+                  the link&rdquo;)
                 </li>
                 <li>
                   <strong>Important:</strong> Create an empty text file named
@@ -259,10 +259,10 @@ export default function SettingsPage() {
               <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-md">
                 <p className="text-sm text-amber-800">
                   <strong>Important:</strong> Service accounts require explicit
-                  sharing with the exact service account email address. "Anyone
-                  with the link" permissions will NOT work. You must share both
-                  the folder and the nisa_notes.txt file directly with your
-                  service account email.
+                  sharing with the exact service account email address.
+                  &ldquo;Anyone with the link&rdquo; permissions will NOT work.
+                  You must share both the folder and the nisa_notes.txt file
+                  directly with your service account email.
                 </p>
               </div>
             </div>
