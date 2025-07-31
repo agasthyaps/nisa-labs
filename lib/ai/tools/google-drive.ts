@@ -323,7 +323,7 @@ export const reviewNotes = ({ session }: GoogleDriveToolProps) =>
 export const updateNotes = ({ session }: GoogleDriveToolProps) =>
   tool({
     description:
-      'Update the assistant\'s notes about the knowledge base. This creates or updates a "nisa_notes.txt" file in the Drive folder.',
+      'Update the assistant\'s notes about the knowledge base. This creates or updates a "nisa_notes.txt" file in the Drive folder. updates are destructive, so the assistant will overwrite the existing file with the new notes.',
     parameters: z.object({
       notes: z
         .string()
