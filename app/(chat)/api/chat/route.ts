@@ -22,9 +22,7 @@ import { createDocument } from '@/lib/ai/tools/create-document';
 import { updateDocument } from '@/lib/ai/tools/update-document';
 import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
 import { getWeather } from '@/lib/ai/tools/get-weather';
-import { transcribeImage as transcribeNotes } from '@/lib/ai/tools/transcribe-notes';
 import { transcribeImage } from '@/lib/ai/image-transcription';
-import { isProductionEnvironment } from '@/lib/constants';
 import { myProvider } from '@/lib/ai/providers';
 import { postRequestBodySchema, type PostRequestBody } from './schema';
 import { geolocation } from '@vercel/functions';
@@ -270,9 +268,9 @@ export async function POST(request: Request) {
         const result = streamText({
           model: myProvider.languageModel(selectedChatModel),
           system: systemPromptData.content,
-
           messages,
           maxSteps: 5,
+
           experimental_activeTools:
             selectedChatModel === 'chat-model-reasoning'
               ? []
@@ -304,6 +302,7 @@ export async function POST(request: Request) {
             requestSuggestions: requestSuggestions({
               session,
               dataStream,
+              sessionId: id, // Pass chat ID as session ID
             }),
             readGoogleSheet: readGoogleSheet({ session }),
             writeGoogleSheet: writeGoogleSheet({ session }),
@@ -359,12 +358,16 @@ export async function POST(request: Request) {
             isEnabled: true,
             functionId: 'chat-response',
             metadata: {
+              // Session tracking - Vercel AI SDK format for Langfuse
+              sessionId: id, // Use chat ID as session ID
+              userId: session.user.id,
+              // Existing metadata
               ...(systemPromptData.langfusePrompt && {
                 langfusePrompt: systemPromptData.langfusePrompt,
               }),
               selectedChatModel,
-              userId: session.user.id,
               chatId: id,
+              chat_visibility: selectedVisibilityType,
             },
           },
         });

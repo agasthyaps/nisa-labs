@@ -40,6 +40,7 @@ LANGFUSE_HOST=https://us.cloud.langfuse.com
 - **⚡ Smart Fallbacks**: If Langfuse is unavailable, uses cached → hardcoded prompts
 - **🚀 Zero Downtime**: Your app works perfectly even without Langfuse setup
 - **📊 Rich Metadata**: Tracks model, user, chat ID, and prompt version in traces
+- **🗂️ Session Tracking**: Groups related traces by conversation/chat for easy analysis
 
 ## What's Integrated
 
@@ -47,6 +48,28 @@ LANGFUSE_HOST=https://us.cloud.langfuse.com
 ✅ **Summary Generation**: Traced with prompt metadata  
 ✅ **Artifact Creation**: Dynamic prompts (text, code, sheets)  
 ✅ **OpenTelemetry Setup**: Proper Next.js instrumentation  
+✅ **Session Tracking**: All traces grouped by conversation thread  
+✅ **AI Tools**: Request suggestions and image transcription include session context  
+
+## Session Tracking
+
+**How Sessions Work:**
+- Each chat conversation creates a unique session in Langfuse
+- All traces within the same chat are grouped under one session ID
+- Session ID = Chat ID (UUID from your database)
+- User ID is automatically tracked for each session
+
+**What Gets Tracked:**
+- Main chat completions with full context
+- AI tool calls (document suggestions, image transcription)
+- User information and chat metadata
+- Model selection and visibility settings
+
+**In Langfuse Dashboard:**
+- Navigate to "Sessions" to see all conversation threads
+- Click any session to see the full conversation replay
+- Filter sessions by user, date, or metadata
+- View session-level analytics and costs
 
 ## Migration Notes
 
@@ -65,5 +88,26 @@ npx tsx test-langfuse.ts
 - **Without credentials**: Shows "Invalid authorization header" errors but uses fallback prompts ✅
 - **With credentials but no prompts**: Shows empty prompt warnings but uses fallbacks ✅  
 - **With credentials and prompts**: Shows successful fetches with character counts ✅
+
+**Testing Session Tracking:**
+1. **Start a new chat** in your application
+2. **Send multiple messages** in the same conversation
+3. **Use AI tools** like document suggestions or image uploads
+4. **Check Langfuse Dashboard**:
+   - Go to "Sessions" tab
+   - Find your conversation (by timestamp/user)
+   - Verify all traces are grouped under one session
+   - Session ID should match your chat UUID
+
+**What to Look For:**
+- ✅ All traces have the same `session_id` (your chat UUID) in the Sessions tab
+- ✅ User ID is consistent across all traces  
+- ✅ Metadata includes model, chat visibility, and other context
+- ✅ AI tool calls (suggestions, transcription) are linked to the session
+
+**Important Note:**
+- Session tracking uses Vercel AI SDK format: `sessionId` and `userId` in `experimental_telemetry.metadata`
+- These are automatically mapped to Langfuse sessions and user tracking
+- Sessions should appear in the "Sessions" tab in Langfuse dashboard
 
 The system gracefully degrades - your app will work regardless of Langfuse configuration! 

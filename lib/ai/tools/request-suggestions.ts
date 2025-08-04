@@ -9,11 +9,13 @@ import { myProvider } from '../providers';
 interface RequestSuggestionsProps {
   session: Session;
   dataStream: DataStreamWriter;
+  sessionId?: string; // Add optional session ID for tracking
 }
 
 export const requestSuggestions = ({
   session,
   dataStream,
+  sessionId,
 }: RequestSuggestionsProps) =>
   tool({
     description: 'Request suggestions for a document',
@@ -46,6 +48,17 @@ export const requestSuggestions = ({
           suggestedSentence: z.string().describe('The suggested sentence'),
           description: z.string().describe('The description of the suggestion'),
         }),
+        // Add Langfuse session tracking for suggestions
+        experimental_telemetry: {
+          isEnabled: true,
+          functionId: 'request-suggestions',
+          metadata: {
+            // Vercel AI SDK format for Langfuse session tracking
+            ...(sessionId && { sessionId }),
+            ...(session.user?.id && { userId: session.user.id }),
+            document_id: documentId,
+          },
+        },
       });
 
       for await (const element of elementStream) {

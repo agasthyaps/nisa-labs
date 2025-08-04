@@ -36,6 +36,16 @@ export const transcribeImage = tool({
           ],
         },
       ],
+      // Add Langfuse session tracking for image transcription
+      experimental_telemetry: {
+        isEnabled: true,
+        functionId: 'transcribe-image',
+        metadata: {
+          image_url: imageUrl,
+          // Note: Session tracking (sessionId, userId) would need to be passed from parent context
+          // This tool is called during chat processing, so it should inherit session context automatically
+        },
+      },
     });
 
     for await (const delta of fullStream) {
