@@ -716,15 +716,22 @@ export interface RequestHints {
 
 export const getRequestPromptFromHints = (requestHints: RequestHints) => {
   const curricula = [];
-  if (requestHints.curriculumEurekaMath) curricula.push('Eureka Math');
+  if (requestHints.curriculumEurekaMath)
+    curricula.push(
+      'Eureka Math - use the Eureka Math materials from your expertise (if available)',
+    );
   if (requestHints.curriculumIllustrativeMath)
-    curricula.push('Illustrative Math');
+    curricula.push(
+      'Illustrative Math - use the Illustrative Math materials from your expertise (if available)',
+    );
   if (requestHints.curriculumCheckKnowledgeBase)
-    curricula.push('Check My Knowledge Base');
+    curricula.push(
+      'Check My Knowledge Base - use your user knowledge base to answer any curriculum-based queries',
+    );
 
   const curriculumInfo =
     curricula.length > 0
-      ? `\n- curriculum frameworks: ${curricula.join(', ')}`
+      ? `\n- curriculum frameworks (use this to navigate your expertise): ${curricula.join(', ')}`
       : '';
 
   return `SPECIFIC USER INFORMATION:
@@ -756,7 +763,7 @@ export const systemPrompt = async ({
 
   // Add GitHub expertise content at the end if available
   if (expertiseOverview) {
-    systemContent += `\n\n# PEDAGOGICAL EXPERTISE KNOWLEDGE BASE
+    systemContent += `\n\n# PEDAGOGICAL EXPERTISE REPOSITORY
 ${expertiseOverview}`;
   }
 
