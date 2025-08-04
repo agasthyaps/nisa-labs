@@ -236,6 +236,47 @@ export async function getMessagesByChatId({ id }: { id: string }) {
   }
 }
 
+export async function getRecentChatsWithMessages({
+  userId,
+  limit = 3,
+}: {
+  userId: string;
+  limit?: number;
+}) {
+  try {
+    // Get the most recent chats for the user
+    const recentChats = await db
+      .select()
+      .from(chat)
+      .where(eq(chat.userId, userId))
+      .orderBy(desc(chat.createdAt))
+      .limit(limit);
+
+    // Get messages for each chat
+    const chatsWithMessages = await Promise.all(
+      recentChats.map(async (chatRecord) => {
+        const messages = await db
+          .select()
+          .from(message)
+          .where(eq(message.chatId, chatRecord.id))
+          .orderBy(asc(message.createdAt));
+
+        return {
+          ...chatRecord,
+          messages,
+        };
+      }),
+    );
+
+    return chatsWithMessages;
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to get recent chats with messages',
+    );
+  }
+}
+
 export async function voteMessage({
   chatId,
   messageId,

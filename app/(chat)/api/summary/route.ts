@@ -1,40 +1,34 @@
-import { generateText } from 'ai';
-import { myProvider } from '@/lib/ai/providers';
-import { getLookForSummaryPrompt } from '@/lib/ai/prompts';
+import { auth } from '@/app/(auth)/auth';
+import { getRecentChatsWithMessages } from '@/lib/db/queries';
+import { generatePersonalizedGreeting } from '@/lib/ai/chat-summary';
+import { ChatSDKError } from '@/lib/errors';
 
 export async function GET() {
   try {
-    const currentDate = new Date().toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
+    // Get the authenticated user
+    const session = await auth();
+
+    if (!session?.user) {
+      return new ChatSDKError('unauthorized:chat').toResponse();
+    }
+
+    // Get the user's recent chats with messages
+    const recentChats = await getRecentChatsWithMessages({
+      userId: session.user.id,
+      limit: 3,
     });
 
-    const lookForSummaryPrompt = await getLookForSummaryPrompt();
-    const promptWithDate = `${lookForSummaryPrompt.content}
+    // Generate personalized greeting based on chat history
+    const personalizedGreeting = await generatePersonalizedGreeting(
+      recentChats,
+      session.user.email || '',
+    );
 
-Current date: ${currentDate}`;
-
-    const result = await generateText({
-      model: myProvider.languageModel('title-model'),
-      prompt: promptWithDate,
-      experimental_telemetry: {
-        isEnabled: true,
-        functionId: 'look-for-summary',
-        metadata: {
-          ...(lookForSummaryPrompt.langfusePrompt && {
-            langfusePrompt: lookForSummaryPrompt.langfusePrompt,
-          }),
-        },
-      },
-    });
-
-    return Response.json({ summary: result.text });
+    return Response.json({ summary: personalizedGreeting });
   } catch (error) {
-    console.error('Error generating summary:', error);
+    console.error('Error generating personalized greeting:', error);
     return Response.json(
-      { error: 'Failed to generate summary' },
+      { error: 'Failed to generate personalized greeting' },
       { status: 500 },
     );
   }

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 // Function to extract name from email
 const getNameFromEmail = (email: string | null | undefined): string => {
@@ -28,9 +29,20 @@ export default function WelcomePage() {
   const { data: session } = useSession();
   const [summary, setSummary] = useState('');
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   // Get personalized name from email
   const userName = getNameFromEmail(session?.user?.email);
+
+  // Handle clicking on the summary to start a chat with Nisa initiating
+  const handleSummaryClick = () => {
+    if (!summary || loading) return;
+
+    const initMessage = `Start our conversation as if you've said this to invite me in: "${summary}"`;
+
+    // Navigate to new chat with query parameter to auto-start conversation
+    router.push(`/chat?query=${encodeURIComponent(initMessage)}`);
+  };
 
   useEffect(() => {
     const fetchSummary = async () => {
@@ -66,10 +78,30 @@ export default function WelcomePage() {
               Hey {userName}!
             </h2>
             <p className="text-xl text-gray-600 dark:text-zinc-400">
-              Welcome to summer school! <br />
-              <span className="text-gray-400 dark:text-zinc-500 italic">
-                {loading ? 'Loading...' : summary}
-              </span>
+              Welcome to nisa labs! <br />
+              {!loading && summary ? (
+                <button
+                  type="button"
+                  className="w-full mt-4 p-6 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer group"
+                  onClick={handleSummaryClick}
+                  title="Click to continue this conversation with Nisa"
+                >
+                  <div className="flex items-center justify-between h-full">
+                    <span className="text-gray-600 dark:text-zinc-300 italic leading-relaxed flex-1 text-center">
+                      {summary}
+                    </span>
+                    <div className="flex items-center justify-center h-full ml-4 group-hover:text-gray-600 dark:group-hover:text-zinc-300 transition-colors duration-200">
+                      <span className="text-gray-400 dark:text-zinc-500 text-2xl font-light">
+                        &gt;
+                      </span>
+                    </div>
+                  </div>
+                </button>
+              ) : (
+                <span className="text-gray-400 dark:text-zinc-500 italic">
+                  {loading ? 'Loading...' : summary}
+                </span>
+              )}
             </p>
           </div>
 

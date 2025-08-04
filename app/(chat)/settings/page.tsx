@@ -153,7 +153,7 @@ export default function SettingsPage() {
               />
               <p className="text-sm text-muted-foreground mt-1">
                 Paste the full URL of your Google Sheet. Make sure the sheet is
-                shared with the service account.
+                shared with <strong>nisa-drive@nisa.coach</strong>.
               </p>
             </div>
 
@@ -295,14 +295,7 @@ export default function SettingsPage() {
                 </li>
                 <li>Copy the Google Sheets URL and paste it above</li>
                 <li>Save your settings</li>
-                <li>
-                  In chat, you can now use commands like:
-                  <ul className="list-disc list-inside ml-4 mt-1">
-                    <li>&ldquo;Read data from Sheet1!A1:D10&rdquo;</li>
-                    <li>&ldquo;Write this data to Sheet1!A1:D5&rdquo;</li>
-                    <li>&ldquo;Append this row to Sheet1!A:D&rdquo;</li>
-                  </ul>
-                </li>
+                <li>Nisa can now read from and write to your Google Sheet!</li>
               </ol>
             </div>
 

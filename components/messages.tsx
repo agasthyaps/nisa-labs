@@ -17,6 +17,7 @@ interface MessagesProps {
   reload: UseChatHelpers['reload'];
   isReadonly: boolean;
   isArtifactVisible: boolean;
+  isInitializing?: boolean;
 }
 
 function PureMessages({
@@ -27,6 +28,7 @@ function PureMessages({
   setMessages,
   reload,
   isReadonly,
+  isInitializing = false,
 }: MessagesProps) {
   const {
     containerRef: messagesContainerRef,
@@ -44,39 +46,74 @@ function PureMessages({
       ref={messagesContainerRef}
       className="flex flex-col min-w-0 gap-6 flex-1 overflow-y-scroll pt-4 relative"
     >
-      {messages.length === 0 && <Greeting />}
+      {messages.length === 0 && !isInitializing && <Greeting />}
 
-      {messages.map((message, index) => (
-        <PreviewMessage
-          key={message.id}
-          chatId={chatId}
-          message={message}
-          isLoading={status === 'streaming' && messages.length - 1 === index}
-          vote={
-            votes
-              ? votes.find((vote) => vote.messageId === message.id)
-              : undefined
-          }
-          setMessages={setMessages}
-          reload={reload}
-          isReadonly={isReadonly}
-          requiresScrollPadding={
-            hasSentMessage && index === messages.length - 1
-          }
-        />
-      ))}
+      {isInitializing && messages.length === 0 && (
+        <div className="flex items-center justify-center py-8">
+          <div className="flex items-center space-x-2 text-gray-500 dark:text-gray-400">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500 dark:border-gray-400" />
+            <span>Starting conversation...</span>
+          </div>
+        </div>
+      )}
 
-      {status === 'submitted' &&
-        messages.length > 0 &&
-        messages[messages.length - 1].role === 'user' && (
-          <ThinkingMessage
-            hasImages={
-              messages[messages.length - 1].experimental_attachments?.some(
-                (attachment) => attachment.contentType?.startsWith('image/'),
-              ) || false
+      {messages
+        .filter((message) => {
+          // Hide conversation starter messages to maintain the illusion that Nisa initiates
+          if (message.role === 'user' && typeof message.content === 'string') {
+            return !message.content.startsWith('Start our conversation');
+          }
+          return true;
+        })
+        .map((message, index, filteredMessages) => (
+          <PreviewMessage
+            key={message.id}
+            chatId={chatId}
+            message={message}
+            isLoading={
+              status === 'streaming' && filteredMessages.length - 1 === index
+            }
+            vote={
+              votes
+                ? votes.find((vote) => vote.messageId === message.id)
+                : undefined
+            }
+            setMessages={setMessages}
+            reload={reload}
+            isReadonly={isReadonly}
+            requiresScrollPadding={
+              hasSentMessage && index === filteredMessages.length - 1
             }
           />
-        )}
+        ))}
+
+      {(() => {
+        const visibleMessages = messages.filter((message) => {
+          if (message.role === 'user' && typeof message.content === 'string') {
+            return !message.content.startsWith('Start our conversation');
+          }
+          return true;
+        });
+
+        if (
+          status === 'submitted' &&
+          visibleMessages.length > 0 &&
+          visibleMessages[visibleMessages.length - 1]?.role === 'user'
+        ) {
+          return (
+            <ThinkingMessage
+              hasImages={
+                visibleMessages[
+                  visibleMessages.length - 1
+                ].experimental_attachments?.some((attachment) =>
+                  attachment.contentType?.startsWith('image/'),
+                ) || false
+              }
+            />
+          );
+        }
+        return null;
+      })()}
 
       <motion.div
         ref={messagesEndRef}

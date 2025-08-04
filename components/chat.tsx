@@ -74,11 +74,20 @@ export function Chat({
       mutate(unstable_serialize(getChatHistoryPaginationKey));
     },
     onError: (error) => {
-      if (error instanceof ChatSDKError) {
-        toast({
-          type: 'error',
-          description: error.message,
-        });
+      // Don't show error toast during initialization to avoid confusion
+      if (error instanceof ChatSDKError && !isInitializing) {
+        // Also check if it's a chat-related error that might be due to timing
+        const isChatTimingError =
+          error.message.includes('chat') ||
+          error.message.includes('not found') ||
+          error.message.includes('Failed to get');
+
+        if (!isChatTimingError) {
+          toast({
+            type: 'error',
+            description: error.message,
+          });
+        }
       }
     },
   });
@@ -87,18 +96,53 @@ export function Chat({
   const query = searchParams.get('query');
 
   const [hasAppendedQuery, setHasAppendedQuery] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(false);
+  const [initializationTimeout, setInitializationTimeout] =
+    useState<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (query && !hasAppendedQuery) {
-      append({
-        role: 'user',
-        content: query,
-      });
+      setIsInitializing(true);
 
-      setHasAppendedQuery(true);
-      window.history.replaceState({}, '', `/chat/${id}`);
+      // Small delay to ensure chat is properly initialized
+      const timeout = setTimeout(() => {
+        // Always append as user message - we'll filter in the UI
+        append({
+          role: 'user',
+          content: query,
+        });
+
+        setHasAppendedQuery(true);
+        window.history.replaceState({}, '', `/chat/${id}`);
+
+        // Set a longer timeout to ensure initialization period covers the entire process
+        const initTimeout = setTimeout(() => {
+          setIsInitializing(false);
+        }, 3000); // 3 seconds should be enough for the entire process
+
+        setInitializationTimeout(initTimeout);
+      }, 200);
+
+      return () => {
+        clearTimeout(timeout);
+        if (initializationTimeout) {
+          clearTimeout(initializationTimeout);
+        }
+      };
     }
-  }, [query, append, hasAppendedQuery, id]);
+  }, [query, append, hasAppendedQuery, id, initializationTimeout]);
+
+  // Keep loading state active until we start receiving a response
+  useEffect(() => {
+    if (isInitializing && status === 'streaming') {
+      // Clear the timeout since we're now streaming
+      if (initializationTimeout) {
+        clearTimeout(initializationTimeout);
+        setInitializationTimeout(null);
+      }
+      setIsInitializing(false);
+    }
+  }, [isInitializing, status, initializationTimeout]);
 
   const { data: votes } = useSWR<Array<Vote>>(
     messages.length >= 2 ? `/api/vote?chatId=${id}` : null,
@@ -130,6 +174,7 @@ export function Chat({
           reload={reload}
           isReadonly={isReadonly}
           isArtifactVisible={isArtifactVisible}
+          isInitializing={isInitializing}
         />
 
         <form className="flex mx-auto px-4 bg-background pb-4 md:pb-6 gap-2 w-full md:max-w-3xl">
