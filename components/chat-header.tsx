@@ -22,9 +22,15 @@ function PureChatHeader({
   session: Session;
 }) {
   const router = useRouter();
-  const { open } = useSidebar();
+  const { open, setOpen } = useSidebar();
 
   const { width: windowWidth } = useWindowSize();
+
+  const handleBackToHome = () => {
+    // Close sidebar before navigating
+    setOpen(false);
+    router.push('/welcome');
+  };
 
   return (
     <header className="flex sticky top-0 bg-background py-1.5 items-center px-2 md:px-2 gap-2">
@@ -34,9 +40,7 @@ function PureChatHeader({
       <Button
         variant="ghost"
         className="order-1 md:order-1 px-2 h-fit"
-        onClick={() => {
-          router.push('/welcome');
-        }}
+        onClick={handleBackToHome}
       >
         Back to Home
       </Button>

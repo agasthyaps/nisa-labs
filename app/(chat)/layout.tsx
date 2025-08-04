@@ -5,6 +5,7 @@ import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { NisaBranding } from '@/components/nisa-branding';
 import { auth } from '../(auth)/auth';
 import Script from 'next/script';
+import { ConditionalSidebar } from '@/components/conditional-sidebar';
 
 export const experimental_ppr = true;
 
@@ -23,10 +24,12 @@ export default async function Layout({
         strategy="beforeInteractive"
       />
       <NisaBranding position="top-right" />
-      <SidebarProvider defaultOpen={!isCollapsed}>
-        <AppSidebar user={session?.user} />
-        <SidebarInset>{children}</SidebarInset>
-      </SidebarProvider>
+      <ConditionalSidebar 
+        user={session?.user} 
+        isCollapsed={isCollapsed}
+      >
+        {children}
+      </ConditionalSidebar>
     </>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,9 +15,11 @@ import {
 } from '@/components/ui/card';
 import { toast } from '@/components/toast';
 import { LoaderIcon } from '@/components/icons';
+import { ArrowLeft, Beaker } from 'lucide-react';
 
 export default function SettingsPage() {
   const { data: session, status } = useSession();
+  const router = useRouter();
   const [googleSheetsUrl, setGoogleSheetsUrl] = useState('');
   const [googleDriveFolderUrl, setGoogleDriveFolderUrl] = useState('');
   const [curriculumEurekaMath, setCurriculumEurekaMath] = useState(false);
@@ -130,7 +133,26 @@ export default function SettingsPage() {
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">Settings</h1>
+        {/* Header with back button */}
+        <div className="flex items-center gap-4 mb-8">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              // Try to go back, but if no history, go to welcome
+              if (window.history.length > 1) {
+                router.back();
+              } else {
+                router.push('/welcome');
+              }
+            }}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </Button>
+          <h1 className="text-3xl font-bold">Settings</h1>
+        </div>
 
         <Card className="mb-6">
           <CardHeader>
@@ -169,7 +191,13 @@ export default function SettingsPage() {
 
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Google Drive Knowledge Base</CardTitle>
+            <div className="flex items-center gap-2">
+              <CardTitle>Google Drive Knowledge Base</CardTitle>
+              <div className="flex items-center gap-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded-full text-xs font-medium">
+                <Beaker className="w-3 h-3" />
+                New
+              </div>
+            </div>
             <CardDescription>
               Configure your Google Drive folder to enable reading from and
               taking notes about your knowledge base documents.
@@ -207,7 +235,13 @@ export default function SettingsPage() {
 
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Curriculum</CardTitle>
+            <div className="flex items-center gap-2">
+              <CardTitle>Curriculum</CardTitle>
+              <div className="flex items-center gap-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded-full text-xs font-medium">
+                <Beaker className="w-3 h-3" />
+                New
+              </div>
+            </div>
             <CardDescription>
               Select which curriculum frameworks you&apos;re working with to get
               more targeted assistance.

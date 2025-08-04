@@ -1,8 +1,17 @@
+'use client';
+
 import Link from 'next/link';
+import { Settings } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { guestRegex } from '@/lib/constants';
 
 export function NisaBranding({
   position = 'auto',
 }: { position?: 'auto' | 'top-right' }) {
+  const { data: session } = useSession();
+  const isGuest = guestRegex.test(session?.user?.email ?? '');
+  const isAuthenticated = session?.user && !isGuest;
+
   // 'auto' = bottom-center on mobile, top-right on md+; 'top-right' = always top-right
   const className =
     position === 'top-right'
@@ -11,14 +20,28 @@ export function NisaBranding({
 
   return (
     <div className={className}>
-      <Link
-        href="https://nisa.coach"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-base md:text-xl font-semibold text-gray-800 dark:text-zinc-200 hover:text-gray-600 dark:hover:text-zinc-300 transition-colors bg-white/80 dark:bg-black/40 px-3 py-1 rounded-full shadow md:bg-transparent md:dark:bg-transparent"
-      >
-        nisa labs
-      </Link>
+      <div className="flex items-center gap-3">
+        {/* Settings Pill - only show for authenticated users */}
+        {isAuthenticated && (
+          <Link
+            href="/settings"
+            className="text-base md:text-xl font-semibold text-gray-800 dark:text-zinc-200 hover:text-gray-600 dark:hover:text-zinc-300 transition-colors bg-white/80 dark:bg-black/40 px-3 py-1 rounded-full shadow md:bg-transparent md:dark:bg-transparent flex items-center gap-2"
+          >
+            <Settings className="w-4 h-4" />
+            Settings
+          </Link>
+        )}
+
+        {/* Nisa Labs Logo */}
+        <Link
+          href="https://nisa.coach"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-base md:text-xl font-semibold text-gray-800 dark:text-zinc-200 hover:text-gray-600 dark:hover:text-zinc-300 transition-colors bg-white/80 dark:bg-black/40 px-3 py-1 rounded-full shadow md:bg-transparent md:dark:bg-transparent"
+        >
+          nisa labs
+        </Link>
+      </div>
     </div>
   );
 }
