@@ -1,10 +1,9 @@
 <a href="#">
-  <img alt="Advanced AI Chatbot with Artifacts and Integrations" src="app/(chat)/opengraph-image.png">
   <h1 align="center">nisa labs</h1>
 </a>
 
 <p align="center">
-    An advanced AI chatbot with artifacts, integrations, and educational tools. Built with Next.js, AI SDK, and multiple powerful integrations for enhanced productivity and learning.
+    a playground for experimental features of <a href="https://nisa.coach" target="_blank">nisa</a>. many features will get rolled into the product. many will not! README below is mostly ai generated.
 </p>
 
 <p align="center">
