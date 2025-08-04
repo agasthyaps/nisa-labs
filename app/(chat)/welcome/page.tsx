@@ -38,7 +38,7 @@ export default function WelcomePage() {
   const handleSummaryClick = () => {
     if (!summary || loading) return;
 
-    const initMessage = `Start our conversation as if you've said this to invite me in: "${summary}"`;
+    const initMessage = `Start our conversation as if you've just said this to invite me in: "${summary}"`;
 
     // Navigate to new chat with query parameter to auto-start conversation
     router.push(`/chat?query=${encodeURIComponent(initMessage)}`);
