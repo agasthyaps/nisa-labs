@@ -210,10 +210,16 @@ export async function POST(request: Request) {
 
       // Log non-image attachments that will be passed directly to the model
       if (nonImageAttachments.length > 0) {
-        console.log('📎 Non-image attachments will be processed by the model:', {
-          fileCount: nonImageAttachments.length,
-          files: nonImageAttachments.map(att => ({ name: att.name, type: att.contentType })),
-        });
+        console.log(
+          '📎 Non-image attachments will be processed by the model:',
+          {
+            fileCount: nonImageAttachments.length,
+            files: nonImageAttachments.map((att) => ({
+              name: att.name,
+              type: att.contentType,
+            })),
+          },
+        );
       }
     }
 
@@ -243,6 +249,10 @@ export async function POST(request: Request) {
     // Extract user name from email
     const userName = getNameFromEmail(session.user.email);
 
+    // Get user settings for curriculum information
+    const { getUserSettings } = await import('@/lib/db/queries');
+    const userSettings = await getUserSettings({ userId: session.user.id });
+
     const requestHints: RequestHints = {
       longitude,
       latitude,
@@ -252,6 +262,11 @@ export async function POST(request: Request) {
       currentTime,
       timezone,
       userName,
+      curriculumEurekaMath: userSettings?.curriculumEurekaMath || false,
+      curriculumIllustrativeMath:
+        userSettings?.curriculumIllustrativeMath || false,
+      curriculumCheckKnowledgeBase:
+        userSettings?.curriculumCheckKnowledgeBase || false,
     };
 
     await saveMessages({

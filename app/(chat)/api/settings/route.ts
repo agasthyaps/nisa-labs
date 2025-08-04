@@ -18,6 +18,9 @@ const settingsSchema = z.object({
       (val) => !val || val === '' || z.string().url().safeParse(val).success,
       { message: 'Must be a valid URL or empty' },
     ),
+  curriculumEurekaMath: z.boolean().optional(),
+  curriculumIllustrativeMath: z.boolean().optional(),
+  curriculumCheckKnowledgeBase: z.boolean().optional(),
 });
 
 export async function GET() {
@@ -33,6 +36,10 @@ export async function GET() {
     return Response.json({
       googleSheetsUrl: settings?.googleSheetsUrl || '',
       googleDriveFolderUrl: settings?.googleDriveFolderUrl || '',
+      curriculumEurekaMath: settings?.curriculumEurekaMath || false,
+      curriculumIllustrativeMath: settings?.curriculumIllustrativeMath || false,
+      curriculumCheckKnowledgeBase:
+        settings?.curriculumCheckKnowledgeBase || false,
     });
   } catch (error) {
     console.error('Error getting settings:', error);
@@ -49,14 +56,22 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { googleSheetsUrl, googleDriveFolderUrl } =
-      settingsSchema.parse(body);
+    const {
+      googleSheetsUrl,
+      googleDriveFolderUrl,
+      curriculumEurekaMath,
+      curriculumIllustrativeMath,
+      curriculumCheckKnowledgeBase,
+    } = settingsSchema.parse(body);
 
     await saveUserSettings({
       userId: session.user.id,
       googleSheetsUrl: googleSheetsUrl === '' ? undefined : googleSheetsUrl,
       googleDriveFolderUrl:
         googleDriveFolderUrl === '' ? undefined : googleDriveFolderUrl,
+      curriculumEurekaMath,
+      curriculumIllustrativeMath,
+      curriculumCheckKnowledgeBase,
     });
 
     return Response.json({ success: true });

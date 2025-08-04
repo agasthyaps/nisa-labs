@@ -556,10 +556,16 @@ export async function saveUserSettings({
   userId,
   googleSheetsUrl,
   googleDriveFolderUrl,
+  curriculumEurekaMath,
+  curriculumIllustrativeMath,
+  curriculumCheckKnowledgeBase,
 }: {
   userId: string;
   googleSheetsUrl?: string;
   googleDriveFolderUrl?: string;
+  curriculumEurekaMath?: boolean;
+  curriculumIllustrativeMath?: boolean;
+  curriculumCheckKnowledgeBase?: boolean;
 }) {
   try {
     const existingSettings = await getUserSettings({ userId });
@@ -570,6 +576,9 @@ export async function saveUserSettings({
         .set({
           googleSheetsUrl,
           googleDriveFolderUrl,
+          curriculumEurekaMath,
+          curriculumIllustrativeMath,
+          curriculumCheckKnowledgeBase,
           updatedAt: new Date(),
         })
         .where(eq(userSettings.userId, userId))
@@ -581,6 +590,9 @@ export async function saveUserSettings({
           userId,
           googleSheetsUrl,
           googleDriveFolderUrl,
+          curriculumEurekaMath,
+          curriculumIllustrativeMath,
+          curriculumCheckKnowledgeBase,
         })
         .returning();
     }

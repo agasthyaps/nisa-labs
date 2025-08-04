@@ -709,15 +709,31 @@ export interface RequestHints {
   currentTime: string;
   timezone: string;
   userName: string;
+  curriculumEurekaMath?: boolean;
+  curriculumIllustrativeMath?: boolean;
+  curriculumCheckKnowledgeBase?: boolean;
 }
 
-export const getRequestPromptFromHints = (requestHints: RequestHints) => `
-SPECIFIC USER INFORMATION:
+export const getRequestPromptFromHints = (requestHints: RequestHints) => {
+  const curricula = [];
+  if (requestHints.curriculumEurekaMath) curricula.push('Eureka Math');
+  if (requestHints.curriculumIllustrativeMath)
+    curricula.push('Illustrative Math');
+  if (requestHints.curriculumCheckKnowledgeBase)
+    curricula.push('Check My Knowledge Base');
+
+  const curriculumInfo =
+    curricula.length > 0
+      ? `\n- curriculum frameworks: ${curricula.join(', ')}`
+      : '';
+
+  return `SPECIFIC USER INFORMATION:
 - date: ${requestHints.currentDate}
 - time: ${requestHints.currentTime}
 - timezone: ${requestHints.timezone}
-- user's name (use this to address the user): ${requestHints.userName}
+- user's name (use this to address the user): ${requestHints.userName}${curriculumInfo}
 `;
+};
 
 export const systemPrompt = async ({
   selectedChatModel,

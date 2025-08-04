@@ -19,6 +19,11 @@ export default function SettingsPage() {
   const { data: session, status } = useSession();
   const [googleSheetsUrl, setGoogleSheetsUrl] = useState('');
   const [googleDriveFolderUrl, setGoogleDriveFolderUrl] = useState('');
+  const [curriculumEurekaMath, setCurriculumEurekaMath] = useState(false);
+  const [curriculumIllustrativeMath, setCurriculumIllustrativeMath] =
+    useState(false);
+  const [curriculumCheckKnowledgeBase, setCurriculumCheckKnowledgeBase] =
+    useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -36,6 +41,13 @@ export default function SettingsPage() {
         const settings = await response.json();
         setGoogleSheetsUrl(settings.googleSheetsUrl || '');
         setGoogleDriveFolderUrl(settings.googleDriveFolderUrl || '');
+        setCurriculumEurekaMath(settings.curriculumEurekaMath || false);
+        setCurriculumIllustrativeMath(
+          settings.curriculumIllustrativeMath || false,
+        );
+        setCurriculumCheckKnowledgeBase(
+          settings.curriculumCheckKnowledgeBase || false,
+        );
       }
     } catch (error) {
       console.error('Failed to load settings:', error);
@@ -67,6 +79,9 @@ export default function SettingsPage() {
         body: JSON.stringify({
           googleSheetsUrl,
           googleDriveFolderUrl,
+          curriculumEurekaMath,
+          curriculumIllustrativeMath,
+          curriculumCheckKnowledgeBase,
         }),
       });
 
@@ -175,8 +190,82 @@ export default function SettingsPage() {
               />
               <p className="text-sm text-muted-foreground mt-1">
                 Paste the full URL of your Google Drive folder. Make sure the
-                folder is shared with the service account for read access.
+                folder is shared with <strong>nisa-drive@nisa.coach</strong> for
+                read access.
               </p>
+            </div>
+
+            <Button
+              onClick={saveSettings}
+              disabled={isSaving}
+              className="w-full"
+            >
+              {isSaving ? <LoaderIcon /> : 'Save Settings'}
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Curriculum</CardTitle>
+            <CardDescription>
+              Select which curriculum frameworks you&apos;re working with to get
+              more targeted assistance.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="curriculumEurekaMath"
+                  checked={curriculumEurekaMath}
+                  onChange={(e) => setCurriculumEurekaMath(e.target.checked)}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <Label
+                  htmlFor="curriculumEurekaMath"
+                  className="text-sm font-normal"
+                >
+                  Eureka Math
+                </Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="curriculumIllustrativeMath"
+                  checked={curriculumIllustrativeMath}
+                  onChange={(e) =>
+                    setCurriculumIllustrativeMath(e.target.checked)
+                  }
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <Label
+                  htmlFor="curriculumIllustrativeMath"
+                  className="text-sm font-normal"
+                >
+                  Illustrative Math
+                </Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="curriculumCheckKnowledgeBase"
+                  checked={curriculumCheckKnowledgeBase}
+                  onChange={(e) =>
+                    setCurriculumCheckKnowledgeBase(e.target.checked)
+                  }
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <Label
+                  htmlFor="curriculumCheckKnowledgeBase"
+                  className="text-sm font-normal"
+                >
+                  Check My Knowledge Base
+                </Label>
+              </div>
             </div>
 
             <Button
@@ -201,8 +290,8 @@ export default function SettingsPage() {
               <h3 className="font-semibold mb-2">Google Sheets Setup:</h3>
               <ol className="list-decimal list-inside space-y-1 text-sm">
                 <li>
-                  Create a Google Sheet and share it with your service account
-                  email
+                  Create a Google Sheet and share it with{' '}
+                  <strong>nisa-drive@nisa.coach</strong>
                 </li>
                 <li>Copy the Google Sheets URL and paste it above</li>
                 <li>Save your settings</li>
@@ -224,19 +313,14 @@ export default function SettingsPage() {
               <ol className="list-decimal list-inside space-y-1 text-sm">
                 <li>
                   Create a Google Drive folder and share it{' '}
-                  <strong>directly</strong> with your service account email with{' '}
+                  <strong>directly</strong> with{' '}
+                  <strong>nisa-drive@nisa.coach</strong> with{' '}
                   <strong>Editor</strong> permissions (not &ldquo;anyone with
                   the link&rdquo;)
                 </li>
                 <li>
                   <strong>Important:</strong> Create an empty text file named
                   &ldquo;nisa_notes.txt&rdquo; in your folder
-                </li>
-                <li>
-                  <strong>Critical:</strong> Share the
-                  &ldquo;nisa_notes.txt&rdquo; file
-                  <strong>directly</strong> with your service account email with{' '}
-                  <strong>Editor</strong> permissions
                 </li>
                 <li>Copy the Google Drive folder URL and paste it above</li>
                 <li>Save your settings</li>
@@ -262,7 +346,7 @@ export default function SettingsPage() {
                   sharing with the exact service account email address.
                   &ldquo;Anyone with the link&rdquo; permissions will NOT work.
                   You must share both the folder and the nisa_notes.txt file
-                  directly with your service account email.
+                  directly with <strong>nisa-drive@nisa.coach</strong>.
                 </p>
               </div>
             </div>

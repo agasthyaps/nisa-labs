@@ -178,6 +178,13 @@ export const userSettings = pgTable(
       .references(() => user.id),
     googleSheetsUrl: text('googleSheetsUrl'),
     googleDriveFolderUrl: text('googleDriveFolderUrl'),
+    curriculumEurekaMath: boolean('curriculumEurekaMath').default(false),
+    curriculumIllustrativeMath: boolean('curriculumIllustrativeMath').default(
+      false,
+    ),
+    curriculumCheckKnowledgeBase: boolean(
+      'curriculumCheckKnowledgeBase',
+    ).default(false),
     createdAt: timestamp('createdAt').notNull().defaultNow(),
     updatedAt: timestamp('updatedAt').notNull().defaultNow(),
   },
