@@ -23,6 +23,11 @@ import { updateDocument } from '@/lib/ai/tools/update-document';
 import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
 import { getWeather } from '@/lib/ai/tools/get-weather';
 import { transcribeImage } from '@/lib/ai/image-transcription';
+import { detectStudentPII } from '@/lib/ai/student-pii-detection';
+import {
+  redactStudentPII,
+  getRedactionSummary,
+} from '@/lib/ai/student-pii-redaction';
 import { myProvider } from '@/lib/ai/providers';
 import { postRequestBodySchema, type PostRequestBody } from './schema';
 import { geolocation } from '@vercel/functions';
@@ -208,18 +213,183 @@ export async function POST(request: Request) {
         }
       }
 
-      // Log non-image attachments that will be passed directly to the model
+      // Handle non-image attachments with PII detection
       if (nonImageAttachments.length > 0) {
-        console.log(
-          '📎 Non-image attachments will be processed by the model:',
-          {
-            fileCount: nonImageAttachments.length,
-            files: nonImageAttachments.map((att) => ({
-              name: att.name,
-              type: att.contentType,
-            })),
-          },
-        );
+        try {
+          console.log(
+            '🔍 Processing non-image attachments for student PII detection:',
+            {
+              fileCount: nonImageAttachments.length,
+              files: nonImageAttachments.map((att) => ({
+                name: att.name,
+                type: att.contentType,
+              })),
+            },
+          );
+
+          // Process all non-image attachments for PII
+          const piiResults = await Promise.all(
+            nonImageAttachments.map(async (attachment) => {
+              try {
+                const piiResult = await detectStudentPII(attachment.url);
+                return { attachment, piiResult };
+              } catch (error) {
+                console.error(
+                  `Failed to detect PII in ${attachment.name}:`,
+                  error,
+                );
+                // For safety, treat as containing PII if detection fails
+                return {
+                  attachment,
+                  piiResult: {
+                    pii: true,
+                    data: [
+                      {
+                        pii_type: 'other',
+                        text: 'Detection failed - treating as sensitive',
+                      },
+                    ],
+                  },
+                };
+              }
+            }),
+          );
+
+          // Process results: separate clean files from PII-containing files
+          const cleanAttachments: typeof nonImageAttachments = [];
+          const redactedContents: Array<{
+            fileName: string;
+            content: string;
+            summary: string;
+          }> = [];
+          const piiProcessingResults: Array<{
+            fileName: string;
+            status: 'clean' | 'redacted';
+            summary: string;
+          }> = [];
+
+          for (const { attachment, piiResult } of piiResults) {
+            if (!piiResult.pii) {
+              // No PII detected: keep original file
+              cleanAttachments.push(attachment);
+              piiProcessingResults.push({
+                fileName: attachment.name,
+                status: 'clean',
+                summary: 'No student information detected',
+              });
+              console.log(`✅ ${attachment.name}: No student PII detected`);
+            } else {
+              // PII detected: fetch content and redact
+              console.log(
+                `🔒 ${attachment.name}: Student PII detected, redacting...`,
+              );
+
+              try {
+                // Use the original content from PII detection to avoid double fetching
+                const originalContent = piiResult.originalContent;
+
+                if (!originalContent) {
+                  throw new Error(
+                    'Original content not available from PII detection',
+                  );
+                }
+
+                const redactedContent = redactStudentPII(
+                  originalContent,
+                  piiResult.data,
+                );
+                const summary = getRedactionSummary(piiResult.data);
+
+                redactedContents.push({
+                  fileName: attachment.name,
+                  content: redactedContent,
+                  summary,
+                });
+
+                piiProcessingResults.push({
+                  fileName: attachment.name,
+                  status: 'redacted',
+                  summary,
+                });
+
+                console.log(`🔒 ${attachment.name}: ${summary}`);
+              } catch (error) {
+                console.error(
+                  `Failed to redact content for ${attachment.name}:`,
+                  error,
+                );
+                redactedContents.push({
+                  fileName: attachment.name,
+                  content: '[Content could not be processed safely]',
+                  summary: 'Processing failed - content excluded for safety',
+                });
+
+                piiProcessingResults.push({
+                  fileName: attachment.name,
+                  status: 'redacted',
+                  summary: 'Processing failed - content excluded for safety',
+                });
+              }
+            }
+          }
+
+          // Store PII processing results for data stream
+          (messageWithTranscription as any).piiProcessingResults =
+            piiProcessingResults;
+
+          // Update message with clean attachments and redacted content
+          if (redactedContents.length > 0) {
+            const redactedText = redactedContents
+              .map(
+                ({ fileName, content }) =>
+                  `\n\n[File content (student PII redacted) - ${fileName}:\n${content}]`,
+              )
+              .join('');
+
+            messageWithTranscription = {
+              ...messageWithTranscription,
+              content: `${messageWithTranscription.content}${redactedText}`,
+              parts: [
+                ...messageWithTranscription.parts,
+                {
+                  type: 'text',
+                  text: redactedText,
+                },
+              ],
+              experimental_attachments: [
+                ...(messageWithTranscription.experimental_attachments?.filter(
+                  (att) =>
+                    att.contentType?.startsWith('image/') ||
+                    cleanAttachments.some((clean) => clean.url === att.url),
+                ) || []),
+              ],
+            };
+          }
+
+          console.log('✅ Student PII detection completed:', {
+            totalFiles: nonImageAttachments.length,
+            cleanFiles: cleanAttachments.length,
+            redactedFiles: redactedContents.length,
+          });
+        } catch (error) {
+          console.error('Failed to process attachments for PII:', error);
+          // For safety, remove all non-image attachments if processing fails
+          messageWithTranscription = {
+            ...messageWithTranscription,
+            content: `${messageWithTranscription.content}\n\n[Note: Some files could not be processed safely and were excluded for student privacy protection]`,
+            parts: [
+              ...messageWithTranscription.parts,
+              {
+                type: 'text',
+                text: '\n\n[Note: Some files could not be processed safely and were excluded for student privacy protection]',
+              },
+            ],
+            experimental_attachments:
+              messageWithTranscription.experimental_attachments?.filter((att) =>
+                att.contentType?.startsWith('image/'),
+              ),
+          };
+        }
       }
     }
 
@@ -287,6 +457,26 @@ export async function POST(request: Request) {
 
     const stream = createDataStream({
       execute: async (dataStream) => {
+        // Send PII processing updates
+        const piiResults = (messageWithTranscription as any)
+          .piiProcessingResults;
+        if (piiResults && piiResults.length > 0) {
+          for (const result of piiResults) {
+            dataStream.writeData({
+              type: 'student-privacy-protection',
+              content: {
+                fileName: result.fileName,
+                status: result.status,
+                message:
+                  result.status === 'clean'
+                    ? `✅ ${result.fileName}: No student information detected`
+                    : `🔒 ${result.fileName}: Student information detected and redacted`,
+                details: result.summary,
+              },
+            });
+          }
+        }
+
         const systemPromptData = await systemPrompt({
           selectedChatModel,
           requestHints,

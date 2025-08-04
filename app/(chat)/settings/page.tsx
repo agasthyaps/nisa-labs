@@ -297,7 +297,11 @@ export default function SettingsPage() {
                   htmlFor="curriculumCheckKnowledgeBase"
                   className="text-sm font-normal"
                 >
-                  Check My Knowledge Base
+                  Check My Knowledge Base{' '}
+                  <i>
+                    (Nisa will look for curriculum info in your shared google
+                    drive folder)
+                  </i>
                 </Label>
               </div>
             </div>

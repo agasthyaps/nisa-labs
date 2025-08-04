@@ -115,8 +115,8 @@ function PureMultimodalInput({
     const imageAttachments = attachments.filter((attachment) =>
       attachment.contentType?.startsWith('image/'),
     );
-    const nonImageAttachments = attachments.filter((attachment) =>
-      !attachment.contentType?.startsWith('image/'),
+    const nonImageAttachments = attachments.filter(
+      (attachment) => !attachment.contentType?.startsWith('image/'),
     );
 
     // Show processing state if any files are attached
@@ -138,7 +138,7 @@ function PureMultimodalInput({
     if (attachments.length > 0) {
       setTimeout(() => {
         setIsProcessingFiles(false);
-        
+
         // Create success message based on file types
         let successMessage = '';
         if (imageAttachments.length > 0 && nonImageAttachments.length > 0) {
@@ -148,7 +148,7 @@ function PureMultimodalInput({
         } else if (nonImageAttachments.length > 0) {
           successMessage = `${nonImageAttachments.length === 1 ? 'File' : 'Files'} processed successfully!`;
         }
-        
+
         if (successMessage) {
           toast.success(successMessage);
         }
@@ -452,7 +452,6 @@ const SendButton = memo(PureSendButton, (prevProps, nextProps) => {
   if (prevProps.uploadQueue.length !== nextProps.uploadQueue.length)
     return false;
   if (prevProps.input !== nextProps.input) return false;
-  if (prevProps.isProcessingFiles !== nextProps.isProcessingFiles)
-    return false;
+  if (prevProps.isProcessingFiles !== nextProps.isProcessingFiles) return false;
   return true;
 });
