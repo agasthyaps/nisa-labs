@@ -2,6 +2,29 @@ import type { Attachment } from 'ai';
 
 import { LoaderIcon } from './icons';
 
+// Helper function to get file type icon
+const getFileTypeIcon = (contentType: string) => {
+  if (contentType.startsWith('image/')) {
+    return '🖼️';
+  } else if (contentType === 'application/pdf') {
+    return '📄';
+  } else if (contentType.includes('spreadsheet') || contentType.includes('excel') || contentType === 'text/csv') {
+    return '📊';
+  } else if (contentType.includes('wordprocessingml') || contentType.includes('msword')) {
+    return '📝';
+  } else if (contentType.includes('presentationml') || contentType.includes('powerpoint')) {
+    return '📺';
+  } else if (contentType.startsWith('text/') || contentType === 'application/json' || contentType === 'application/xml') {
+    return '📃';
+  } else if (contentType.includes('javascript') || contentType.includes('typescript')) {
+    return '💻';
+  } else if (contentType === 'text/css') {
+    return '🎨';
+  } else {
+    return '📎';
+  }
+};
+
 export const PreviewAttachment = ({
   attachment,
   isUploading = false,
@@ -25,10 +48,16 @@ export const PreviewAttachment = ({
               className="rounded-md size-full object-cover"
             />
           ) : (
-            <div className="" />
+            // Display file type icon for non-image files
+            <div className="flex flex-col items-center justify-center h-full">
+              <span className="text-2xl">{getFileTypeIcon(contentType)}</span>
+            </div>
           )
         ) : (
-          <div className="" />
+          // Default icon when content type is unknown
+          <div className="flex flex-col items-center justify-center h-full">
+            <span className="text-2xl">📎</span>
+          </div>
         )}
 
         {isUploading && (

@@ -146,7 +146,7 @@ export async function POST(request: Request) {
 
     const previousMessages = await getMessagesByChatId({ id });
 
-    // If the message has image attachments, automatically transcribe them using dedicated GPT-4.1
+    // Process attachments: transcribe images, pass other files directly to model
     let messageWithTranscription = message;
     if (
       message.experimental_attachments &&
@@ -155,7 +155,11 @@ export async function POST(request: Request) {
       const imageAttachments = message.experimental_attachments.filter(
         (attachment) => attachment.contentType?.startsWith('image/'),
       );
+      const nonImageAttachments = message.experimental_attachments.filter(
+        (attachment) => !attachment.contentType?.startsWith('image/'),
+      );
 
+      // Handle image attachments with transcription
       if (imageAttachments.length > 0) {
         try {
           // Process all image attachments
@@ -202,6 +206,14 @@ export async function POST(request: Request) {
         } catch (error) {
           console.error('Failed to transcribe images:', error);
         }
+      }
+
+      // Log non-image attachments that will be passed directly to the model
+      if (nonImageAttachments.length > 0) {
+        console.log('📎 Non-image attachments will be processed by the model:', {
+          fileCount: nonImageAttachments.length,
+          files: nonImageAttachments.map(att => ({ name: att.name, type: att.contentType })),
+        });
       }
     }
 

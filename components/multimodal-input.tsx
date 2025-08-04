@@ -109,16 +109,19 @@ function PureMultimodalInput({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadQueue, setUploadQueue] = useState<Array<string>>([]);
-  const [isProcessingImages, setIsProcessingImages] = useState(false);
+  const [isProcessingFiles, setIsProcessingFiles] = useState(false);
 
   const submitForm = useCallback(async () => {
     const imageAttachments = attachments.filter((attachment) =>
       attachment.contentType?.startsWith('image/'),
     );
+    const nonImageAttachments = attachments.filter((attachment) =>
+      !attachment.contentType?.startsWith('image/'),
+    );
 
-    // Show processing state if images are attached
-    if (imageAttachments.length > 0) {
-      setIsProcessingImages(true);
+    // Show processing state if any files are attached
+    if (attachments.length > 0) {
+      setIsProcessingFiles(true);
     }
 
     window.history.replaceState({}, '', `/chat/${chatId}`);
@@ -132,12 +135,23 @@ function PureMultimodalInput({
     resetHeight();
 
     // Reset processing state after a short delay to show the transition
-    if (imageAttachments.length > 0) {
+    if (attachments.length > 0) {
       setTimeout(() => {
-        setIsProcessingImages(false);
-        toast.success(
-          `${imageAttachments.length === 1 ? 'Image' : 'Images'} processed successfully!`,
-        );
+        setIsProcessingFiles(false);
+        
+        // Create success message based on file types
+        let successMessage = '';
+        if (imageAttachments.length > 0 && nonImageAttachments.length > 0) {
+          successMessage = `${attachments.length} files processed successfully!`;
+        } else if (imageAttachments.length > 0) {
+          successMessage = `${imageAttachments.length === 1 ? 'Image' : 'Images'} processed successfully!`;
+        } else if (nonImageAttachments.length > 0) {
+          successMessage = `${nonImageAttachments.length === 1 ? 'File' : 'Files'} processed successfully!`;
+        }
+        
+        if (successMessage) {
+          toast.success(successMessage);
+        }
       }, 1500);
     }
 
@@ -242,7 +256,7 @@ function PureMultimodalInput({
       </AnimatePresence>
 
       <AnimatePresence>
-        {isProcessingImages && (
+        {isProcessingFiles && (
           <ImageProcessingMessage
             imageCount={
               attachments.filter((a) => a.contentType?.startsWith('image/'))
@@ -267,6 +281,7 @@ function PureMultimodalInput({
         className="fixed -top-4 -left-4 size-0.5 opacity-0 pointer-events-none"
         ref={fileInputRef}
         multiple
+        accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.md,.html,.json,.xml,.js,.ts,.css"
         onChange={handleFileChange}
         tabIndex={-1}
       />
@@ -320,22 +335,22 @@ function PureMultimodalInput({
                 toast.error(
                   'Please wait for the model to finish its response!',
                 );
-              } else if (isProcessingImages) {
-                toast.error('Please wait for images to finish processing!');
+              } else if (isProcessingFiles) {
+                toast.error('Please wait for files to finish processing!');
               } else {
                 submitForm();
               }
             }
           }}
         />
-        {status === 'submitted' || isProcessingImages ? (
+        {status === 'submitted' || isProcessingFiles ? (
           <StopButton stop={stop} setMessages={setMessages} />
         ) : (
           <SendButton
             input={input}
             submitForm={submitForm}
             uploadQueue={uploadQueue}
-            isProcessingImages={isProcessingImages}
+            isProcessingFiles={isProcessingFiles}
           />
         )}
       </div>
@@ -409,12 +424,12 @@ function PureSendButton({
   submitForm,
   input,
   uploadQueue,
-  isProcessingImages,
+  isProcessingFiles,
 }: {
   submitForm: () => void;
   input: string;
   uploadQueue: Array<string>;
-  isProcessingImages: boolean;
+  isProcessingFiles: boolean;
 }) {
   return (
     <Button
@@ -425,7 +440,7 @@ function PureSendButton({
         submitForm();
       }}
       disabled={
-        input.length === 0 || uploadQueue.length > 0 || isProcessingImages
+        input.length === 0 || uploadQueue.length > 0 || isProcessingFiles
       }
     >
       <ArrowUpIcon size={14} />
@@ -437,7 +452,7 @@ const SendButton = memo(PureSendButton, (prevProps, nextProps) => {
   if (prevProps.uploadQueue.length !== nextProps.uploadQueue.length)
     return false;
   if (prevProps.input !== nextProps.input) return false;
-  if (prevProps.isProcessingImages !== nextProps.isProcessingImages)
+  if (prevProps.isProcessingFiles !== nextProps.isProcessingFiles)
     return false;
   return true;
 });

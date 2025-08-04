@@ -8,12 +8,32 @@ import { auth } from '@/app/(auth)/auth';
 const FileSchema = z.object({
   file: z
     .instanceof(Blob)
-    .refine((file) => file.size <= 5 * 1024 * 1024, {
-      message: 'File size should be less than 5MB',
+    .refine((file) => file.size <= 10 * 1024 * 1024, {
+      message: 'File size should be less than 10MB',
     })
-    // Update the file type based on the kind of files you want to accept
-    .refine((file) => ['image/jpeg', 'image/png'].includes(file.type), {
-      message: 'File type should be JPEG or PNG',
+    // Support common file types including images, documents, text files, etc.
+    .refine((file) => {
+      const allowedTypes = [
+        // Images
+        'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
+        // Documents
+        'application/pdf',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation', // .pptx
+        'application/msword', // .doc
+        'application/vnd.ms-excel', // .xls
+        'application/vnd.ms-powerpoint', // .ppt
+        // Text files
+        'text/plain', 'text/csv', 'text/markdown', 'text/html',
+        'application/json', 'application/xml',
+        // Code files
+        'text/javascript', 'text/typescript', 'text/css',
+        'application/javascript', 'application/typescript',
+      ];
+      return allowedTypes.includes(file.type);
+    }, {
+      message: 'File type not supported. Supported types: images (JPEG, PNG, GIF, WebP), documents (PDF, DOCX, XLSX, PPTX), text files (TXT, CSV, MD, HTML, JSON, XML), and code files.',
     }),
 });
 

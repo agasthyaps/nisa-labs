@@ -18,7 +18,24 @@ export const postRequestBodySchema = z.object({
         z.object({
           url: z.string().url(),
           name: z.string().min(1).max(2000),
-          contentType: z.enum(['image/png', 'image/jpg', 'image/jpeg']),
+          contentType: z.enum([
+            // Images
+            'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
+            // Documents
+            'application/pdf',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'application/msword',
+            'application/vnd.ms-excel',
+            'application/vnd.ms-powerpoint',
+            // Text files
+            'text/plain', 'text/csv', 'text/markdown', 'text/html',
+            'application/json', 'application/xml',
+            // Code files
+            'text/javascript', 'text/typescript', 'text/css',
+            'application/javascript', 'application/typescript',
+          ]),
         }),
       )
       .optional(),
