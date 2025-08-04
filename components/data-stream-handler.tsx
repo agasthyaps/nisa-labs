@@ -25,7 +25,7 @@ export type DataStreamDelta = {
     | Suggestion
     | {
         fileName: string;
-        status: 'clean' | 'redacted';
+        status: 'clean' | 'redacted' | 'pii-preserved';
         message: string;
         details: string;
       };
@@ -47,7 +47,7 @@ export function DataStreamHandler({ id }: { id: string }) {
       if (delta.type === 'student-privacy-protection') {
         const privacyData = delta.content as {
           fileName: string;
-          status: 'clean' | 'redacted';
+          status: 'clean' | 'redacted' | 'pii-preserved';
           message: string;
           details: string;
         };
@@ -56,9 +56,14 @@ export function DataStreamHandler({ id }: { id: string }) {
           toast.success(privacyData.message, {
             description: 'File processed safely without privacy concerns',
           });
-        } else {
+        } else if (privacyData.status === 'redacted') {
           toast.info(privacyData.message, {
             description: privacyData.details,
+          });
+        } else if (privacyData.status === 'pii-preserved') {
+          toast.warning(privacyData.message, {
+            description:
+              'File contains student info but was preserved due to file type. Please review responses carefully.',
           });
         }
         return; // Don't process further for privacy protection updates

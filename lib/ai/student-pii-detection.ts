@@ -8,6 +8,7 @@ export interface StudentPIIResult {
     text: string;
   }> | null;
   originalContent?: string; // Include original content to avoid double fetching
+  canRedact?: boolean; // Whether this file type can be easily redacted
 }
 
 const STUDENT_PII_PROMPT = `
@@ -44,8 +45,25 @@ Use these pii_type categories:
 Be thorough but only flag actual PII that could identify specific individuals.
 `;
 
+// Determine if a file can be easily redacted based on content type
+function canRedactFileType(contentType: string): boolean {
+  const redactableTypes = [
+    'text/plain',
+    'text/csv',
+    'application/json',
+    'text/markdown',
+    'text/html',
+    'application/xml',
+    'text/javascript',
+    'text/typescript',
+    'text/css',
+  ];
+  return redactableTypes.includes(contentType);
+}
+
 export async function detectStudentPII(
   fileUrl: string,
+  contentType?: string,
 ): Promise<StudentPIIResult> {
   try {
     console.log(
@@ -119,6 +137,7 @@ ${fileContent}`,
     return {
       ...result,
       originalContent: fileContent,
+      canRedact: contentType ? canRedactFileType(contentType) : true,
     };
   } catch (error) {
     console.error('❌ Failed to detect student PII:', error);
@@ -132,6 +151,7 @@ ${fileContent}`,
         },
       ],
       originalContent: undefined, // Don't include content if detection failed
+      canRedact: false, // Assume can't redact if detection failed
     };
   }
 }

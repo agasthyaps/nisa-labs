@@ -231,7 +231,10 @@ export async function POST(request: Request) {
           const piiResults = await Promise.all(
             nonImageAttachments.map(async (attachment) => {
               try {
-                const piiResult = await detectStudentPII(attachment.url);
+                const piiResult = await detectStudentPII(
+                  attachment.url,
+                  attachment.contentType,
+                );
                 return { attachment, piiResult };
               } catch (error) {
                 console.error(
@@ -264,9 +267,10 @@ export async function POST(request: Request) {
           }> = [];
           const piiProcessingResults: Array<{
             fileName: string;
-            status: 'clean' | 'redacted';
+            status: 'clean' | 'redacted' | 'pii-preserved';
             summary: string;
           }> = [];
+          const disclaimers: string[] = [];
 
           for (const { attachment, piiResult } of piiResults) {
             if (!piiResult.pii) {
@@ -279,55 +283,76 @@ export async function POST(request: Request) {
               });
               console.log(`✅ ${attachment.name}: No student PII detected`);
             } else {
-              // PII detected: fetch content and redact
-              console.log(
-                `🔒 ${attachment.name}: Student PII detected, redacting...`,
-              );
-
-              try {
-                // Use the original content from PII detection to avoid double fetching
-                const originalContent = piiResult.originalContent;
-
-                if (!originalContent) {
-                  throw new Error(
-                    'Original content not available from PII detection',
-                  );
-                }
-
-                const redactedContent = redactStudentPII(
-                  originalContent,
-                  piiResult.data,
+              // PII detected: check if we can redact
+              if (piiResult.canRedact) {
+                // Can redact: proceed with redaction
+                console.log(
+                  `🔒 ${attachment.name}: Student PII detected, redacting...`,
                 );
+
+                try {
+                  // Use the original content from PII detection to avoid double fetching
+                  const originalContent = piiResult.originalContent;
+
+                  if (!originalContent) {
+                    throw new Error(
+                      'Original content not available from PII detection',
+                    );
+                  }
+
+                  const redactedContent = redactStudentPII(
+                    originalContent,
+                    piiResult.data,
+                  );
+                  const summary = getRedactionSummary(piiResult.data);
+
+                  redactedContents.push({
+                    fileName: attachment.name,
+                    content: redactedContent,
+                    summary,
+                  });
+
+                  piiProcessingResults.push({
+                    fileName: attachment.name,
+                    status: 'redacted',
+                    summary,
+                  });
+
+                  console.log(`🔒 ${attachment.name}: ${summary}`);
+                } catch (error) {
+                  console.error(
+                    `Failed to redact content for ${attachment.name}:`,
+                    error,
+                  );
+                  redactedContents.push({
+                    fileName: attachment.name,
+                    content: '[Content could not be processed safely]',
+                    summary: 'Processing failed - content excluded for safety',
+                  });
+
+                  piiProcessingResults.push({
+                    fileName: attachment.name,
+                    status: 'redacted',
+                    summary: 'Processing failed - content excluded for safety',
+                  });
+                }
+              } else {
+                // Can't redact: pass through with disclaimer
+                console.log(
+                  `⚠️ ${attachment.name}: Student PII detected but file type cannot be easily redacted - passing through with disclaimer`,
+                );
+
+                cleanAttachments.push(attachment);
                 const summary = getRedactionSummary(piiResult.data);
 
-                redactedContents.push({
-                  fileName: attachment.name,
-                  content: redactedContent,
-                  summary,
-                });
-
-                piiProcessingResults.push({
-                  fileName: attachment.name,
-                  status: 'redacted',
-                  summary,
-                });
-
-                console.log(`🔒 ${attachment.name}: ${summary}`);
-              } catch (error) {
-                console.error(
-                  `Failed to redact content for ${attachment.name}:`,
-                  error,
+                disclaimers.push(
+                  `The file "${attachment.name}" contains student information (${summary.replace('Redacted: ', '')}). Please ensure your responses protect student privacy and avoid identifying specific individuals.`,
                 );
-                redactedContents.push({
-                  fileName: attachment.name,
-                  content: '[Content could not be processed safely]',
-                  summary: 'Processing failed - content excluded for safety',
-                });
 
                 piiProcessingResults.push({
                   fileName: attachment.name,
-                  status: 'redacted',
-                  summary: 'Processing failed - content excluded for safety',
+                  status: 'pii-preserved',
+                  summary: `PII detected but preserved due to file type - ${summary}`,
                 });
               }
             }
@@ -336,6 +361,22 @@ export async function POST(request: Request) {
           // Store PII processing results for data stream
           (messageWithTranscription as any).piiProcessingResults =
             piiProcessingResults;
+
+          // Add disclaimers if there are files with preserved PII
+          if (disclaimers.length > 0) {
+            const disclaimerText = `\n\n[Privacy Notice: ${disclaimers.join(' ')}]`;
+            messageWithTranscription = {
+              ...messageWithTranscription,
+              content: `${messageWithTranscription.content}${disclaimerText}`,
+              parts: [
+                ...messageWithTranscription.parts,
+                {
+                  type: 'text',
+                  text: disclaimerText,
+                },
+              ],
+            };
+          }
 
           // Update message with clean attachments and redacted content
           if (redactedContents.length > 0) {
@@ -462,15 +503,21 @@ export async function POST(request: Request) {
           .piiProcessingResults;
         if (piiResults && piiResults.length > 0) {
           for (const result of piiResults) {
+            let message = '';
+            if (result.status === 'clean') {
+              message = `✅ ${result.fileName}: No student information detected`;
+            } else if (result.status === 'redacted') {
+              message = `🔒 ${result.fileName}: Student information detected and redacted`;
+            } else if (result.status === 'pii-preserved') {
+              message = `⚠️ ${result.fileName}: Student information detected but preserved`;
+            }
+
             dataStream.writeData({
               type: 'student-privacy-protection',
               content: {
                 fileName: result.fileName,
                 status: result.status,
-                message:
-                  result.status === 'clean'
-                    ? `✅ ${result.fileName}: No student information detected`
-                    : `🔒 ${result.fileName}: Student information detected and redacted`,
+                message,
                 details: result.summary,
               },
             });
