@@ -65,7 +65,7 @@ function escapeRegExp(string: string): string {
  */
 export function getRedactionSummary(piiData: StudentPIIResult['data']): string {
   if (!piiData || piiData.length === 0) {
-    return 'No student information redacted';
+    return 'No specific student information detected';
   }
 
   const typeCounts: Record<string, number> = {};

@@ -28,6 +28,22 @@ import {
   redactStudentPII,
   getRedactionSummary,
 } from '@/lib/ai/student-pii-redaction';
+
+// Determine if a file can be easily redacted based on content type
+function canRedactFileType(contentType: string): boolean {
+  const redactableTypes = [
+    'text/plain',
+    'text/csv',
+    'application/json',
+    'text/markdown',
+    'text/html',
+    'application/xml',
+    'text/javascript',
+    'text/typescript',
+    'text/css',
+  ];
+  return redactableTypes.includes(contentType);
+}
 import { myProvider } from '@/lib/ai/providers';
 import { postRequestBodySchema, type PostRequestBody } from './schema';
 import { geolocation } from '@vercel/functions';
@@ -227,9 +243,29 @@ export async function POST(request: Request) {
             },
           );
 
-          // Process all non-image attachments for PII
+          // Process all non-image attachments - check redactability first
           const piiResults = await Promise.all(
             nonImageAttachments.map(async (attachment) => {
+              const contentType = attachment.contentType || '';
+              const canRedact = canRedactFileType(contentType);
+
+              if (!canRedact) {
+                // Non-redactable file: skip expensive PII detection, assume it might have PII
+                console.log(
+                  `⚠️ ${attachment.name}: Non-redactable file type (${contentType}) - skipping PII detection`,
+                );
+                return {
+                  attachment,
+                  piiResult: {
+                    pii: true, // Assume PII for safety
+                    data: null, // No specific PII data since we didn't scan
+                    canRedact: false,
+                    originalContent: undefined,
+                  },
+                };
+              }
+
+              // Redactable file: run full PII detection
               try {
                 const piiResult = await detectStudentPII(
                   attachment.url,
@@ -252,6 +288,8 @@ export async function POST(request: Request) {
                         text: 'Detection failed - treating as sensitive',
                       },
                     ],
+                    canRedact: true, // We know it's redactable, just detection failed
+                    originalContent: undefined,
                   },
                 };
               }
@@ -337,22 +375,22 @@ export async function POST(request: Request) {
                   });
                 }
               } else {
-                // Can't redact: pass through with disclaimer
+                // Can't redact: pass through with generic disclaimer (no specific PII data since we didn't scan)
                 console.log(
-                  `⚠️ ${attachment.name}: Student PII detected but file type cannot be easily redacted - passing through with disclaimer`,
+                  `⚠️ ${attachment.name}: Non-redactable file type - passing through with generic privacy notice`,
                 );
 
                 cleanAttachments.push(attachment);
-                const summary = getRedactionSummary(piiResult.data);
 
                 disclaimers.push(
-                  `The file "${attachment.name}" contains student information (${summary.replace('Redacted: ', '')}). Please ensure your responses protect student privacy and avoid identifying specific individuals.`,
+                  `The file "${attachment.name}" may contain student information and could not be automatically redacted due to its file type. Please ensure your responses protect student privacy and avoid identifying specific individuals.`,
                 );
 
                 piiProcessingResults.push({
                   fileName: attachment.name,
                   status: 'pii-preserved',
-                  summary: `PII detected but preserved due to file type - ${summary}`,
+                  summary:
+                    'File type cannot be redacted - privacy notice added',
                 });
               }
             }
