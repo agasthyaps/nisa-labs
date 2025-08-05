@@ -625,16 +625,19 @@ async function getKnowledgeBaseNotes(userId: string): Promise<string> {
 
     const auth = new google.auth.GoogleAuth({
       credentials,
-      scopes: ['https://www.googleapis.com/auth/drive'],
+      scopes: [
+        'https://www.googleapis.com/auth/drive',
+        'https://www.googleapis.com/auth/documents',
+      ],
     });
 
     const authClient = await auth.getClient();
     const drive = google.drive('v3');
 
-    // Look for nisa_notes.txt file
+    // Look for nisa_notes Google Doc
     const searchResponse = await drive.files.list({
       auth: authClient as any,
-      q: `'${folderId}' in parents and name='nisa_notes.txt' and trashed=false`,
+      q: `'${folderId}' in parents and name='nisa_notes' and mimeType='application/vnd.google-apps.document' and trashed=false`,
       fields: 'files(id,name)',
     });
 
@@ -648,11 +651,11 @@ async function getKnowledgeBaseNotes(userId: string): Promise<string> {
       return '';
     }
 
-    // Read the notes file content
-    const response = await drive.files.get({
+    // Read the Google Doc content by exporting as plain text
+    const response = await drive.files.export({
       auth: authClient as any,
       fileId: file.id,
-      alt: 'media',
+      mimeType: 'text/plain',
     });
 
     return response.data as string;
@@ -779,7 +782,7 @@ ${expertiseOverview}`;
 
   // Add knowledge base notes if available
   if (knowledgeBaseNotes) {
-    systemContent += `\n\n# USER KNOWLEDGE BASE OVERVIEW (nisa_notes.txt content at start of conversation)
+    systemContent += `\n\n# USER KNOWLEDGE BASE OVERVIEW (nisa_notes Google Doc content at start of conversation)
 ${knowledgeBaseNotes}`;
   }
 

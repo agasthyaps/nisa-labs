@@ -48,7 +48,10 @@ async function getDriveClient() {
 
   const auth = new google.auth.GoogleAuth({
     credentials,
-    scopes: ['https://www.googleapis.com/auth/drive'],
+    scopes: [
+      'https://www.googleapis.com/auth/drive',
+      'https://www.googleapis.com/auth/documents',
+    ],
   });
 
   return auth.getClient();
@@ -59,6 +62,7 @@ interface GoogleDriveToolProps {
 }
 
 const drive = google.drive('v3');
+const docs = google.docs('v1');
 
 export const listKnowledgeBaseFiles = ({ session }: GoogleDriveToolProps) =>
   tool({
@@ -245,7 +249,7 @@ export const readKnowledgeBaseFile = ({ session }: GoogleDriveToolProps) =>
 export const reviewNotes = ({ session }: GoogleDriveToolProps) =>
   tool({
     description:
-      'Review the current notes that the assistant has saved about the knowledge base. These are stored in a special "nisa_notes.txt" file.',
+      'Review the current notes that the assistant has saved about the knowledge base. These are stored in a special "nisa_notes" Google Doc.',
     parameters: z.object({}),
     execute: async () => {
       try {
@@ -272,10 +276,10 @@ export const reviewNotes = ({ session }: GoogleDriveToolProps) =>
 
         const authClient = await getDriveClient();
 
-        // Look for nisa_notes.txt file
+        // Look for nisa_notes Google Doc
         const searchResponse = await drive.files.list({
           auth: authClient as any,
-          q: `'${folderId}' in parents and name='nisa_notes.txt' and trashed=false`,
+          q: `'${folderId}' in parents and name='nisa_notes' and mimeType='application/vnd.google-apps.document' and trashed=false`,
           fields: 'files(id,name)',
         });
 
@@ -283,10 +287,10 @@ export const reviewNotes = ({ session }: GoogleDriveToolProps) =>
         if (files.length === 0) {
           return {
             message:
-              'No notes file found. Please create an empty "nisa_notes.txt" file in your Google Drive folder to enable note-taking.',
+              'No notes document found. Please create an empty "nisa_notes" Google Doc in your Google Drive folder to enable note-taking.',
             notes: '',
             suggestion:
-              'Due to Google Drive limitations, service accounts cannot create new files. You need to manually create the "nisa_notes.txt" file first.',
+              'Create a new Google Doc named "nisa_notes" in your knowledge base folder and share it with your service account.',
           };
         }
 
@@ -296,11 +300,11 @@ export const reviewNotes = ({ session }: GoogleDriveToolProps) =>
           return { error: 'Notes file ID not available' };
         }
 
-        // Read the notes file content
-        const response = await drive.files.get({
+        // Read the Google Doc content by exporting as plain text
+        const response = await drive.files.export({
           auth: authClient as any,
           fileId: file.id,
-          alt: 'media',
+          mimeType: 'text/plain',
         });
 
         const notes = response.data as string;
@@ -323,7 +327,7 @@ export const reviewNotes = ({ session }: GoogleDriveToolProps) =>
 export const updateNotes = ({ session }: GoogleDriveToolProps) =>
   tool({
     description:
-      'Update the assistant\'s notes about the knowledge base. This creates or updates a "nisa_notes.txt" file in the Drive folder. updates are destructive, so the assistant will overwrite the existing file with the new notes.',
+      'Update the assistant\'s notes about the knowledge base. This updates a "nisa_notes" Google Doc in the Drive folder. Updates are destructive, so the assistant will overwrite the existing document content with the new notes.',
     parameters: z.object({
       notes: z
         .string()
@@ -354,29 +358,48 @@ export const updateNotes = ({ session }: GoogleDriveToolProps) =>
 
         const authClient = await getDriveClient();
 
-        // Check if nisa_notes.txt already exists
+        // Check if nisa_notes Google Doc already exists
         const searchResponse = await drive.files.list({
           auth: authClient as any,
-          q: `'${folderId}' in parents and name='nisa_notes.txt' and trashed=false`,
+          q: `'${folderId}' in parents and name='nisa_notes' and mimeType='application/vnd.google-apps.document' and trashed=false`,
           fields: 'files(id,name)',
         });
 
         const files = searchResponse.data.files || [];
 
         if (files.length > 0) {
-          // Update existing file
+          // Update existing Google Doc using Docs API
           const fileId = files[0].id;
 
           if (!fileId) {
-            return { error: 'Notes file ID not available' };
+            return { error: 'Notes document ID not available' };
           }
 
-          await drive.files.update({
+          // Use Google Docs API to clear and insert new content
+          await docs.documents.batchUpdate({
             auth: authClient as any,
-            fileId,
-            media: {
-              mimeType: 'text/plain',
-              body: notes,
+            documentId: fileId,
+            requestBody: {
+              requests: [
+                // First, delete all existing content
+                {
+                  deleteContentRange: {
+                    range: {
+                      startIndex: 1,
+                      endIndex: -1, // -1 means end of document
+                    },
+                  },
+                },
+                // Then insert new content
+                {
+                  insertText: {
+                    location: {
+                      index: 1,
+                    },
+                    text: notes,
+                  },
+                },
+              ],
             },
           });
 
@@ -389,21 +412,24 @@ export const updateNotes = ({ session }: GoogleDriveToolProps) =>
           // Provide helpful guidance to the user
           return {
             error:
-              'Cannot create notes file. Service accounts have storage limitations. Please create an empty "nisa_notes.txt" file in your Google Drive folder and share it with the service account, then try again.',
+              'Cannot create notes document. Please create an empty "nisa_notes" Google Doc in your Google Drive folder and share it with the service account, then try again.',
             suggestion:
-              'Alternative: Use a Google Shared Drive instead of a personal folder, which allows service accounts to create files.',
+              'Create a new Google Doc named "nisa_notes" in your knowledge base folder and share it with your service account email address.',
           };
         }
       } catch (error: any) {
         console.error('Error updating notes:', error);
 
         // Check for common permission issues
-        if (error.message?.includes('write access')) {
+        if (
+          error.message?.includes('write access') ||
+          error.message?.includes('permission')
+        ) {
           return {
             error:
-              'Permission denied. The nisa_notes.txt file must be shared directly with your service account email address (not "anyone with the link").',
+              'Permission denied. The nisa_notes Google Doc must be shared directly with your service account email address (not "anyone with the link").',
             suggestion:
-              'Right-click the nisa_notes.txt file → Share → Enter your service account email → Give Editor access.',
+              'Right-click the nisa_notes Google Doc → Share → Enter your service account email → Give Editor access.',
           };
         }
 
