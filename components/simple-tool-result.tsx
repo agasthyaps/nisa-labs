@@ -87,6 +87,15 @@ const getSimpleDescription = (
         hasError: false,
       };
 
+    case 'getExpertiseTree':
+      return {
+        title: 'Repository structure retrieved',
+        summary: result.stats
+          ? `Found ${result.stats.totalFiles} files and ${result.stats.totalDirectories} directories`
+          : 'Tree structure retrieved',
+        hasError: false,
+      };
+
     case 'listExpertiseFiles':
       return {
         title: 'Expertise files retrieved',
@@ -193,6 +202,17 @@ export function SimpleToolResult({ toolName, result }: SimpleToolResultProps) {
                 </div>
                 <div className="text-sm whitespace-pre-wrap max-h-96 overflow-y-auto">
                   {result.content || result.error || 'No content available'}
+                </div>
+              </div>
+            ) : toolName === 'getExpertiseTree' ? (
+              <div className="bg-background p-3 rounded border">
+                <div className="text-sm font-medium text-muted-foreground mb-2">
+                  Repository Structure:
+                </div>
+                <div className="text-sm whitespace-pre font-mono max-h-96 overflow-y-auto">
+                  {result.treeDisplay ||
+                    result.error ||
+                    'No structure available'}
                 </div>
               </div>
             ) : toolName === 'getExpertiseOverview' ? (

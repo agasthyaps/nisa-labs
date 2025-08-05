@@ -747,7 +747,7 @@ export const getRequestPromptFromHints = (requestHints: RequestHints) => {
       ? `\n- curriculum frameworks (use this to navigate your expertise): ${curricula.join(', ')}`
       : '';
 
-  return `SPECIFIC USER INFORMATION:
+  return `# SPECIFIC USER INFORMATION:
 - date: ${requestHints.currentDate}
 - time: ${requestHints.currentTime}
 - timezone: ${requestHints.timezone}
@@ -776,13 +776,13 @@ export const systemPrompt = async ({
 
   // Add GitHub expertise content at the end if available
   if (expertiseOverview) {
-    systemContent += `\n\n# PEDAGOGICAL EXPERTISE REPOSITORY
+    systemContent += `\n\n# EXPERTISE REPOSITORY OVERVIEW
 ${expertiseOverview}`;
   }
 
   // Add knowledge base notes if available
   if (knowledgeBaseNotes) {
-    systemContent += `\n\n# USER KNOWLEDGE BASE OVERVIEW (nisa_notes Google Doc content at start of conversation)
+    systemContent += `\n\n# YOUR PERSONAL NOTES (nisa_notes Google Doc):
 ${knowledgeBaseNotes}`;
   }
 

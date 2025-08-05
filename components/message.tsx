@@ -201,6 +201,7 @@ const PurePreviewMessage = ({
                             toolName === 'readKnowledgeBaseFile' ||
                             toolName === 'reviewNotes' ||
                             toolName === 'updateNotes' ||
+                            toolName === 'getExpertiseTree' ||
                             toolName === 'listExpertiseFiles' ||
                             toolName === 'readExpertiseFile' ||
                             toolName === 'searchExpertiseContent' ||
@@ -223,6 +224,7 @@ const PurePreviewMessage = ({
                             'readKnowledgeBaseFile',
                             'reviewNotes',
                             'updateNotes',
+                            'getExpertiseTree',
                             'listExpertiseFiles',
                             'readExpertiseFile',
                             'searchExpertiseContent',
@@ -267,6 +269,7 @@ const PurePreviewMessage = ({
                         toolName === 'reviewNotes' ||
                         toolName === 'updateNotes' ||
                         toolName === 'transcribeImage' ||
+                        toolName === 'getExpertiseTree' ||
                         toolName === 'listExpertiseFiles' ||
                         toolName === 'readExpertiseFile' ||
                         toolName === 'searchExpertiseContent' ||

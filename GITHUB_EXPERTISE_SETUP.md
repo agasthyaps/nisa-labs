@@ -33,10 +33,11 @@ GITHUB_PERSONAL_ACCESS_TOKEN=your_github_personal_access_token_here
 
 The AI assistant has access to these GitHub expertise tools:
 
-1. **`listExpertiseFiles`** - List all files in the pedagogical expertise repository
-2. **`readExpertiseFile`** - Read content from specific expertise files (e.g., "10 Key Teaching Moves.md")
-3. **`searchExpertiseContent`** - Search for files by name or content (e.g., "warm demander")
-4. **`getExpertiseOverview`** - Get the repository overview and structure
+1. **`getExpertiseTree`** - Get the complete directory tree structure of the repository, showing all files and folders hierarchically
+2. **`listExpertiseFiles`** - List files and directories in a specific path (can navigate subdirectories)
+3. **`readExpertiseFile`** - Read content from specific expertise files (accepts both names and full paths)
+4. **`searchExpertiseContent`** - Search for files by name or content (e.g., "warm demander")
+5. **`getExpertiseOverview`** - Get the repository overview from README.md
 
 ### User Interface
 
@@ -50,12 +51,14 @@ Tool results are displayed in a clean, collapsible format:
 
 The system clearly distinguishes between:
 
-- **GitHub Expertise Tools** (`listExpertiseFiles`, `readExpertiseFile`) - Access to pedagogical expertise (GitHub repo)
+- **GitHub Expertise Tools** (`getExpertiseTree`, `listExpertiseFiles`, `readExpertiseFile`, etc.) - Access to pedagogical expertise (GitHub repo)
 - **Google Drive Knowledge Base Tools** (`listKnowledgeBaseFiles`, `readKnowledgeBaseFile`) - Access to user's personal knowledge base (Google Drive)
 
 ### Example Usage
 
 Users can ask questions like:
+- "Show me the structure of the expertise repository"
+- "What files are in the curricula/eureka folder?"
 - "Show me the 10 key teaching moves"
 - "What are the warm demander principles?"
 - "Find resources about mathematical discourse"
@@ -71,8 +74,35 @@ The expertise repository contains:
 - `Key Math Teaching Practices.md` - Math-specific implementation
 - `How to be a Warm Demander.md` - Coaching framework
 - `313 Model.md` - Summer school implementation model
+- `curricula/eureka/` - Eureka Math curriculum resources
+  - `ist.md` - Coaching guide with teacher actions
+  - `guidedobs.md` - Professional development for observations
+  - `scope_sequence.md` - Curriculum progression PK-5
+- `frameworks/danielson/` - Complete Danielson Framework for Teaching
 - `Rigorous Math Questions to Promote Mathematical Discourse.md` - Question bank
 - `Nisa's Knowledge Base - Sheet1.csv` - Metadata tracking
+
+## Navigation Features
+
+The tools provide enhanced navigation capabilities:
+
+### Tree View (`getExpertiseTree`)
+- Shows complete repository structure in a visual tree format
+- Displays directories with `/` suffix and file sizes
+- Provides a flat list of all paths for easy reference
+- Helps understand the overall organization
+
+### Directory Navigation (`listExpertiseFiles`)
+- Navigate into any subdirectory by providing its path
+- Shows files and directories separately
+- Includes parent directory reference for easy navigation up
+- Provides helpful stats about directory contents
+
+### Improved Error Handling
+- When a file/path is not found, suggests correct paths
+- Detects when trying to read a directory vs. a file
+- Shows available files/directories when navigation fails
+- Provides clear guidance for fixing path issues
 
 ## Error Handling
 

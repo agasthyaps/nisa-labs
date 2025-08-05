@@ -69,6 +69,7 @@ import {
   updateNotes,
 } from '@/lib/ai/tools/google-drive';
 import {
+  getExpertiseTree,
   listExpertiseFiles,
   readExpertiseFile,
   searchExpertiseContent,
@@ -589,6 +590,7 @@ export async function POST(request: Request) {
                   'readKnowledgeBaseFile',
                   'reviewNotes',
                   'updateNotes',
+                  'getExpertiseTree',
                   'listExpertiseFiles',
                   'readExpertiseFile',
                   'searchExpertiseContent',
@@ -614,6 +616,7 @@ export async function POST(request: Request) {
             readKnowledgeBaseFile: readKnowledgeBaseFile({ session }),
             reviewNotes: reviewNotes({ session }),
             updateNotes: updateNotes({ session }),
+            getExpertiseTree: getExpertiseTree({ session }),
             listExpertiseFiles: listExpertiseFiles({ session }),
             readExpertiseFile: readExpertiseFile({ session }),
             searchExpertiseContent: searchExpertiseContent({ session }),
