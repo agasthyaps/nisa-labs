@@ -8,15 +8,32 @@ const getFileTypeIcon = (contentType: string) => {
     return '🖼️';
   } else if (contentType === 'application/pdf') {
     return '📄';
-  } else if (contentType.includes('spreadsheet') || contentType.includes('excel') || contentType === 'text/csv') {
+  } else if (
+    contentType.includes('spreadsheet') ||
+    contentType.includes('excel') ||
+    contentType === 'text/csv'
+  ) {
     return '📊';
-  } else if (contentType.includes('wordprocessingml') || contentType.includes('msword')) {
+  } else if (
+    contentType.includes('wordprocessingml') ||
+    contentType.includes('msword')
+  ) {
     return '📝';
-  } else if (contentType.includes('presentationml') || contentType.includes('powerpoint')) {
+  } else if (
+    contentType.includes('presentationml') ||
+    contentType.includes('powerpoint')
+  ) {
     return '📺';
-  } else if (contentType.startsWith('text/') || contentType === 'application/json' || contentType === 'application/xml') {
+  } else if (
+    contentType.startsWith('text/') ||
+    contentType === 'application/json' ||
+    contentType === 'application/xml'
+  ) {
     return '📃';
-  } else if (contentType.includes('javascript') || contentType.includes('typescript')) {
+  } else if (
+    contentType.includes('javascript') ||
+    contentType.includes('typescript')
+  ) {
     return '💻';
   } else if (contentType === 'text/css') {
     return '🎨';

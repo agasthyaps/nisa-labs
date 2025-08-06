@@ -327,11 +327,13 @@ export const reviewNotes = ({ session }: GoogleDriveToolProps) =>
 export const updateNotes = ({ session }: GoogleDriveToolProps) =>
   tool({
     description:
-      'Update the assistant\'s notes about the knowledge base. This updates a "nisa_notes" Google Doc in the Drive folder. Updates are destructive, so the assistant will overwrite the existing document content with the new notes.',
+      'Append new notes to the assistant\'s knowledge base notes. This adds content to a "nisa_notes" Google Doc in the Drive folder. New notes are appended to existing content with a timestamp.',
     parameters: z.object({
       notes: z
         .string()
-        .describe('The updated notes content to save about the knowledge base'),
+        .describe(
+          'The new notes content to append to the knowledge base notes',
+        ),
     }),
     execute: async ({ notes }) => {
       try {
@@ -375,28 +377,34 @@ export const updateNotes = ({ session }: GoogleDriveToolProps) =>
             return { error: 'Notes document ID not available' };
           }
 
-          // Use Google Docs API to clear and insert new content
+          // First, get the document to find its length
+          const docResponse = await docs.documents.get({
+            auth: authClient as any,
+            documentId: fileId,
+          });
+
+          const doc = docResponse.data;
+          const endIndex =
+            doc.body?.content?.reduce((maxIndex, element) => {
+              return Math.max(maxIndex, element.endIndex || 0);
+            }, 0) || 1;
+
+          // Create timestamp for the new entry
+          const timestamp = new Date().toLocaleString();
+          const newEntry = `\n\n--- ${timestamp} ---\n${notes}`;
+
+          // Append new content to the end of the document
           await docs.documents.batchUpdate({
             auth: authClient as any,
             documentId: fileId,
             requestBody: {
               requests: [
-                // First, delete all existing content
-                {
-                  deleteContentRange: {
-                    range: {
-                      startIndex: 1,
-                      endIndex: -1, // -1 means end of document
-                    },
-                  },
-                },
-                // Then insert new content
                 {
                   insertText: {
                     location: {
-                      index: 1,
+                      index: endIndex - 1, // Insert before the final newline
                     },
-                    text: notes,
+                    text: newEntry,
                   },
                 },
               ],
@@ -404,8 +412,8 @@ export const updateNotes = ({ session }: GoogleDriveToolProps) =>
           });
 
           return {
-            message: 'Successfully updated notes',
-            action: 'updated',
+            message: 'Successfully appended notes',
+            action: 'appended',
           };
         } else {
           // Service accounts can't create files due to storage quota limitations
