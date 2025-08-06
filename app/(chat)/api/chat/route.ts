@@ -537,6 +537,16 @@ export async function POST(request: Request) {
 
     const stream = createDataStream({
       execute: async (dataStream) => {
+        // 🚀 IMMEDIATE RESPONSE: Start streaming status updates right away
+        dataStream.writeData({
+          type: 'status-update',
+          content: {
+            message: 'Processing your request...',
+            stage: 'initializing',
+            timestamp: Date.now(),
+          },
+        });
+
         // Send PII processing updates
         const piiResults = (messageWithTranscription as any)
           .piiProcessingResults;
@@ -563,11 +573,31 @@ export async function POST(request: Request) {
           }
         }
 
+        // Show context loading status
+        dataStream.writeData({
+          type: 'status-update',
+          content: {
+            message: 'Loading context and preparing response...',
+            stage: 'context-loading',
+            timestamp: Date.now(),
+          },
+        });
+
         const systemPromptData = await systemPrompt({
           selectedChatModel,
           requestHints,
           userId: session.user.id,
         });
+
+        // Clear status and start LLM generation
+        dataStream.writeData({
+          type: 'status-clear',
+          content: {
+            message: 'Starting generation...',
+            timestamp: Date.now(),
+          },
+        });
+
         const result = streamText({
           model: myProvider.languageModel(selectedChatModel),
           system: systemPromptData.content,

@@ -26,7 +26,7 @@ export const myProvider = isTestEnvironment
   : customProvider({
       languageModels: {
         // OpenAI models (original)
-        'chat-model': google('learnlm-2.0-flash-experimental'),
+        'chat-model': google('gemini-2.5-flash'),
         'chat-model-reasoning': wrapLanguageModel({
           model: openai('o4-mini'),
           middleware: extractReasoningMiddleware({ tagName: 'think' }),

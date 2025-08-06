@@ -476,6 +476,13 @@ let cachedPrompts: Record<
 let lastFetch = 0;
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
+// Enhanced caching for external services
+let githubExpertiseCache: { content: string; timestamp: number } | null = null;
+const knowledgeBaseCache: Map<string, { content: string; timestamp: number }> =
+  new Map();
+const GITHUB_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+const KNOWLEDGE_BASE_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 async function getPromptFromLangfuse(
   name: string,
   label?: string,
@@ -511,6 +518,7 @@ async function getPromptFromLangfuse(
 async function getPromptsFromLangfuse(): Promise<
   Record<string, { content: string; langfusePrompt?: any }>
 > {
+  // Check cache first - this was broken before!
   if (cachedPrompts && Date.now() - lastFetch < CACHE_TTL) {
     return cachedPrompts;
   }
@@ -552,9 +560,17 @@ export const getArtifactsPrompt = async (): Promise<{
   return prompts.artifactsPrompt;
 };
 
-// Helper function to get GitHub expertise overview
+// Helper function to get GitHub expertise overview with caching
 async function getGitHubExpertiseOverview(): Promise<string> {
   try {
+    // Check cache first
+    if (
+      githubExpertiseCache &&
+      Date.now() - githubExpertiseCache.timestamp < GITHUB_CACHE_TTL
+    ) {
+      return githubExpertiseCache.content;
+    }
+
     if (!process.env.GITHUB_PERSONAL_ACCESS_TOKEN) {
       return '';
     }
@@ -573,16 +589,31 @@ async function getGitHubExpertiseOverview(): Promise<string> {
       },
     });
 
-    return response.data as unknown as string;
+    const content = response.data as unknown as string;
+
+    // Update cache
+    githubExpertiseCache = {
+      content,
+      timestamp: Date.now(),
+    };
+
+    return content;
   } catch (error) {
     console.error('Failed to fetch GitHub expertise overview:', error);
     return '';
   }
 }
 
-// Helper function to get knowledge base notes
+// Helper function to get knowledge base notes with caching
 async function getKnowledgeBaseNotes(userId: string): Promise<string> {
   try {
+    // Check cache first
+    const cacheKey = userId;
+    const cached = knowledgeBaseCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < KNOWLEDGE_BASE_CACHE_TTL) {
+      return cached.content;
+    }
+
     const { getUserSettings } = await import('@/lib/db/queries');
     const { google } = await import('googleapis');
 
@@ -658,7 +689,15 @@ async function getKnowledgeBaseNotes(userId: string): Promise<string> {
       mimeType: 'text/plain',
     });
 
-    return response.data as string;
+    const content = response.data as string;
+
+    // Update cache
+    knowledgeBaseCache.set(cacheKey, {
+      content,
+      timestamp: Date.now(),
+    });
+
+    return content;
   } catch (error) {
     console.error('Failed to fetch knowledge base notes:', error);
     return '';
@@ -765,30 +804,47 @@ export const systemPrompt = async ({
   userId?: string;
 }) => {
   const requestPrompt = getRequestPromptFromHints(requestHints);
-  const regularPrompt = await getRegularPrompt();
 
-  // Fetch GitHub expertise overview and knowledge base notes
-  const expertiseOverview = await getGitHubExpertiseOverview();
-  const knowledgeBaseNotes = userId ? await getKnowledgeBaseNotes(userId) : '';
+  // Fetch prompts and external services in parallel for better performance
+  const [regularPrompt, expertiseOverview, knowledgeBaseNotes] =
+    await Promise.allSettled([
+      getRegularPrompt(),
+      getGitHubExpertiseOverview(),
+      userId ? getKnowledgeBaseNotes(userId) : Promise.resolve(''),
+    ]);
+
+  // Extract results, gracefully handling failures
+  const regularPromptResult =
+    regularPrompt.status === 'fulfilled'
+      ? regularPrompt.value
+      : {
+          content: fallbackPrompts.regularPrompt,
+          langfusePrompt: undefined,
+        };
+
+  const expertiseOverviewResult =
+    expertiseOverview.status === 'fulfilled' ? expertiseOverview.value : '';
+  const knowledgeBaseNotesResult =
+    knowledgeBaseNotes.status === 'fulfilled' ? knowledgeBaseNotes.value : '';
 
   // Build the system prompt content
-  let systemContent = `${regularPrompt.content}\n\n${requestPrompt}`;
+  let systemContent = `${regularPromptResult.content}\n\n${requestPrompt}`;
 
   // Add GitHub expertise content at the end if available
-  if (expertiseOverview) {
+  if (expertiseOverviewResult) {
     systemContent += `\n\n# EXPERTISE REPOSITORY OVERVIEW
-${expertiseOverview}`;
+${expertiseOverviewResult}`;
   }
 
   // Add knowledge base notes if available
-  if (knowledgeBaseNotes) {
+  if (knowledgeBaseNotesResult) {
     systemContent += `\n\n# YOUR PERSONAL NOTES (nisa_notes Google Doc):
-${knowledgeBaseNotes}`;
+${knowledgeBaseNotesResult}`;
   }
 
   return {
     content: systemContent,
-    langfusePrompt: regularPrompt.langfusePrompt,
+    langfusePrompt: regularPromptResult.langfusePrompt,
   };
 };
 

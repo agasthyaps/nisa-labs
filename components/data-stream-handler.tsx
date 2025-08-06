@@ -19,7 +19,9 @@ export type DataStreamDelta = {
     | 'clear'
     | 'finish'
     | 'kind'
-    | 'student-privacy-protection';
+    | 'student-privacy-protection'
+    | 'status-update'
+    | 'status-clear';
   content:
     | string
     | Suggestion
@@ -28,6 +30,15 @@ export type DataStreamDelta = {
         status: 'clean' | 'redacted' | 'pii-preserved';
         message: string;
         details: string;
+      }
+    | {
+        message: string;
+        stage: 'initializing' | 'context-loading' | 'generating';
+        timestamp: number;
+      }
+    | {
+        message: string;
+        timestamp: number;
       };
 };
 
@@ -43,6 +54,32 @@ export function DataStreamHandler({ id }: { id: string }) {
     lastProcessedIndex.current = dataStream.length - 1;
 
     (newDeltas as DataStreamDelta[]).forEach((delta: DataStreamDelta) => {
+      // Handle status updates for immediate feedback
+      if (delta.type === 'status-update') {
+        const statusData = delta.content as {
+          message: string;
+          stage: 'initializing' | 'context-loading' | 'generating';
+          timestamp: number;
+        };
+
+        // Show subtle loading toast for immediate feedback
+        toast.loading(statusData.message, {
+          id: 'processing-status',
+          description:
+            statusData.stage === 'context-loading'
+              ? 'Gathering context from your knowledge base...'
+              : undefined,
+        });
+        return;
+      }
+
+      // Handle status clear
+      if (delta.type === 'status-clear') {
+        // Dismiss the loading toast as we start generating
+        toast.dismiss('processing-status');
+        return;
+      }
+
       // Handle student privacy protection updates
       if (delta.type === 'student-privacy-protection') {
         const privacyData = delta.content as {
