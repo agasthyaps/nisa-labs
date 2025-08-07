@@ -19,19 +19,20 @@ function PureSuggestedActions({
 }: SuggestedActionsProps) {
   const suggestedActions = [
     {
-      title: 'What are the look-fors',
-      label: 'for summer school teachers this week?',
-      action: 'What are the look-fors for a teacher this week?',
+      title: 'Uncover insights',
+      label: "about a trend I haven't noticed",
+      action:
+        'Use your expertise and the tools available to you to uncover insights or surface something interesting or useful that I might not have noticed myself.',
     },
     {
       title: 'Help me plan a debrief',
       label: `for a teacher.`,
-      action: `Help me plan a debrief for a teacher based on this week's look-fors`,
+      action: `Help me plan a debrief for a teacher based on what you know about them.`,
     },
     {
       title: 'Write a follow-up email',
-      label: `to a teacher.`,
-      action: `Write a follow-up email to a teacher`,
+      label: `to a teacher based on our last conversation.`,
+      action: `Write a follow-up email to a teacher based on our last conversation.`,
     },
     {
       title: 'Update my coaching log',
