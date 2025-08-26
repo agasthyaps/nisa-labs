@@ -26,12 +26,12 @@ export const myProvider = isTestEnvironment
   : customProvider({
       languageModels: {
         // OpenAI models (original)
-        'chat-model': google('gemini-2.5-flash'),
+        'chat-model': openai('gpt-4.1'),
         'chat-model-reasoning': wrapLanguageModel({
-          model: openai('o4-mini'),
+          model: google('gemini-2.5-pro'),
           middleware: extractReasoningMiddleware({ tagName: 'think' }),
         }),
-        'title-model': google('gemini-2.0-flash'),
+        'title-model': google('gemini-2.5-flash'),
         'artifact-model': openai('gpt-4.1'),
 
         // Anthropic models (new)
@@ -40,9 +40,8 @@ export const myProvider = isTestEnvironment
         'claude-opus': anthropic('claude-3-opus-20240229'),
 
         // Google models (new)
-        'gemini-flash': google('gemini-1.5-flash'),
-        'gemini-pro': google('gemini-1.5-pro'),
-        'gemini-flash-2': google('gemini-2.0-flash-exp'),
+        'gemini-flash': google('gemini-2.5-flash'),
+        'gemini-pro': google('gemini-2.5-pro'),
       },
       imageModels: {
         'small-model': openai.image('dall-e-3'),

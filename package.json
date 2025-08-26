@@ -16,7 +16,8 @@
     "db:pull": "drizzle-kit pull",
     "db:check": "drizzle-kit check",
     "db:up": "drizzle-kit up",
-    "test": "export PLAYWRIGHT=True && pnpm exec playwright test"
+    "test": "export PLAYWRIGHT=True && pnpm exec playwright test",
+    "eval:kbtest": "tsx scripts/run-kbtest.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.2.12",
