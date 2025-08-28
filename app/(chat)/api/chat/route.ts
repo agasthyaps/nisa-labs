@@ -598,11 +598,11 @@ export async function POST(request: Request) {
     // Get user settings for curriculum information and role
     let userSettings;
     let userRole = 'coach'; // Default fallback
-    
+
     try {
       userSettings = await getUserSettings({ userId: session.user.id });
       userRole = userSettings?.roleType || 'coach';
-      
+
       console.log('🔍 User settings debug:', {
         userId: session.user.id,
         userSettings: userSettings ? 'found' : 'not found',
@@ -697,14 +697,14 @@ export async function POST(request: Request) {
         });
 
         console.log('🤖 Generating system prompt for role:', userRole);
-        
+
         const systemPromptData = await systemPrompt({
           selectedChatModel,
           requestHints,
           userId: session.user.id,
           userRole,
         });
-        
+
         console.log('✅ System prompt generated:', {
           contentLength: systemPromptData.content.length,
           hasLangfusePrompt: !!systemPromptData.langfusePrompt,
@@ -719,7 +719,11 @@ export async function POST(request: Request) {
           },
         });
 
-        const result = streamText({
+        console.log('🚀 Starting streamText...');
+        
+        let result;
+        try {
+          result = streamText({
           model: myProvider.languageModel(selectedChatModel),
           system: systemPromptData.content,
           messages,
@@ -733,10 +737,20 @@ export async function POST(request: Request) {
           experimental_generateMessageId: generateUUID,
           tools: (() => {
             const tools = getToolsForRole(userRole, session, dataStream, id);
-            console.log('🛠️ Tools for role:', userRole, 'count:', Object.keys(tools).length);
+            console.log(
+              '🛠️ Tools for role:',
+              userRole,
+              'count:',
+              Object.keys(tools).length,
+            );
             return tools;
           })(),
           onFinish: async ({ response }) => {
+            console.log('🏁 streamText onFinish called with response:', {
+              messageCount: response.messages.length,
+              lastMessage: response.messages[response.messages.length - 1]?.content?.slice(0, 100),
+            });
+            
             if (session.user?.id) {
               try {
                 const assistantId = getTrailingMessageId({
@@ -789,12 +803,20 @@ export async function POST(request: Request) {
             },
           },
         });
+        } catch (streamTextError) {
+          console.error('❌ Error in streamText:', streamTextError);
+          throw streamTextError;
+        }
 
+        console.log('🔄 Starting to consume stream...');
         result.consumeStream();
 
+        console.log('🔀 Merging into data stream...');
         result.mergeIntoDataStream(dataStream, {
           sendReasoning: true,
         });
+        
+        console.log('✅ Stream setup complete');
       },
       onError: () => {
         return 'Oops, an error occurred!';
