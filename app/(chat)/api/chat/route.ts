@@ -596,8 +596,25 @@ export async function POST(request: Request) {
     const userName = getNameFromEmail(session.user.email);
 
     // Get user settings for curriculum information and role
-    const userSettings = await getUserSettings({ userId: session.user.id });
-    const userRole = userSettings?.roleType || 'coach';
+    let userSettings;
+    let userRole = 'coach'; // Default fallback
+    
+    try {
+      userSettings = await getUserSettings({ userId: session.user.id });
+      userRole = userSettings?.roleType || 'coach';
+      
+      console.log('🔍 User settings debug:', {
+        userId: session.user.id,
+        userSettings: userSettings ? 'found' : 'not found',
+        roleType: userSettings?.roleType,
+        userRole,
+      });
+    } catch (error) {
+      console.error('❌ Failed to fetch user settings:', error);
+      console.log('🔄 Using default role: coach');
+      userSettings = null;
+      userRole = 'coach';
+    }
 
     const requestHints: RequestHints = {
       longitude,
@@ -679,11 +696,18 @@ export async function POST(request: Request) {
           },
         });
 
+        console.log('🤖 Generating system prompt for role:', userRole);
+        
         const systemPromptData = await systemPrompt({
           selectedChatModel,
           requestHints,
           userId: session.user.id,
           userRole,
+        });
+        
+        console.log('✅ System prompt generated:', {
+          contentLength: systemPromptData.content.length,
+          hasLangfusePrompt: !!systemPromptData.langfusePrompt,
         });
 
         // Clear status and start LLM generation
@@ -701,10 +725,17 @@ export async function POST(request: Request) {
           messages,
           maxSteps: 5,
 
-          experimental_activeTools: getActiveToolsForRole(userRole, selectedChatModel) as any,
+          experimental_activeTools: getActiveToolsForRole(
+            userRole,
+            selectedChatModel,
+          ) as any,
           experimental_transform: smoothStream({ chunking: 'word' }),
           experimental_generateMessageId: generateUUID,
-          tools: getToolsForRole(userRole, session, dataStream, id),
+          tools: (() => {
+            const tools = getToolsForRole(userRole, session, dataStream, id);
+            console.log('🛠️ Tools for role:', userRole, 'count:', Object.keys(tools).length);
+            return tools;
+          })(),
           onFinish: async ({ response }) => {
             if (session.user?.id) {
               try {

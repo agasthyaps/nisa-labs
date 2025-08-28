@@ -842,8 +842,9 @@ export const systemPrompt = async ({
 
   // Fetch prompts and external services in parallel for better performance
   // Choose the appropriate prompt based on user role
-  const basePromptFn = userRole === 'teacher' ? getTeacherPrompt : getRegularPrompt;
-  
+  const basePromptFn =
+    userRole === 'teacher' ? getTeacherPrompt : getRegularPrompt;
+
   const [basePrompt, expertiseOverview, knowledgeBaseNotes] =
     await Promise.allSettled([
       basePromptFn(),
@@ -856,7 +857,10 @@ export const systemPrompt = async ({
     basePrompt.status === 'fulfilled'
       ? basePrompt.value
       : {
-          content: userRole === 'teacher' ? fallbackPrompts.teacherprompt : fallbackPrompts.regularPrompt,
+          content:
+            userRole === 'teacher'
+              ? fallbackPrompts.teacherprompt
+              : fallbackPrompts.regularPrompt,
           langfusePrompt: undefined,
         };
 
