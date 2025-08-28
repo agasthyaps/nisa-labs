@@ -1,0 +1,1 @@
+ALTER TABLE "UserSettings" ADD COLUMN "roleType" varchar DEFAULT 'coach' NOT NULL;

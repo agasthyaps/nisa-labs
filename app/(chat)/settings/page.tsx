@@ -20,6 +20,7 @@ import { ArrowLeft, Beaker } from 'lucide-react';
 export default function SettingsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [roleType, setRoleType] = useState<'coach' | 'teacher'>('coach');
   const [googleSheetsUrl, setGoogleSheetsUrl] = useState('');
   const [googleDriveFolderUrl, setGoogleDriveFolderUrl] = useState('');
   const [curriculumEurekaMath, setCurriculumEurekaMath] = useState(false);
@@ -42,6 +43,7 @@ export default function SettingsPage() {
       const response = await fetch('/api/settings');
       if (response.ok) {
         const settings = await response.json();
+        setRoleType(settings.roleType || 'coach');
         setGoogleSheetsUrl(settings.googleSheetsUrl || '');
         setGoogleDriveFolderUrl(settings.googleDriveFolderUrl || '');
         setCurriculumEurekaMath(settings.curriculumEurekaMath || false);
@@ -80,6 +82,7 @@ export default function SettingsPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          roleType,
           googleSheetsUrl,
           googleDriveFolderUrl,
           curriculumEurekaMath,
@@ -153,6 +156,54 @@ export default function SettingsPage() {
           </Button>
           <h1 className="text-3xl font-bold">Settings</h1>
         </div>
+
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Role Selection</CardTitle>
+            <CardDescription>
+              Choose your role to customize the AI assistant's behavior and available tools.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id="roleCoach"
+                  name="roleType"
+                  checked={roleType === 'coach'}
+                  onChange={() => setRoleType('coach')}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <Label htmlFor="roleCoach" className="text-sm font-normal">
+                  <strong>Coach</strong> - Full access to all tools including Google Sheets integration for decision logging and data analysis
+                </Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id="roleTeacher"
+                  name="roleType"
+                  checked={roleType === 'teacher'}
+                  onChange={() => setRoleType('teacher')}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <Label htmlFor="roleTeacher" className="text-sm font-normal">
+                  <strong>Teacher</strong> - Focused on instructional support with teacher-specific guidance and resources
+                </Label>
+              </div>
+            </div>
+
+            <Button
+              onClick={saveSettings}
+              disabled={isSaving}
+              className="w-full"
+            >
+              {isSaving ? <LoaderIcon /> : 'Save Settings'}
+            </Button>
+          </CardContent>
+        </Card>
 
         <Card className="mb-6">
           <CardHeader>

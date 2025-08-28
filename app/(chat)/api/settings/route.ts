@@ -4,6 +4,7 @@ import { ChatSDKError } from '@/lib/errors';
 import { z } from 'zod';
 
 const settingsSchema = z.object({
+  roleType: z.enum(['coach', 'teacher']).optional(),
   googleSheetsUrl: z
     .string()
     .optional()
@@ -34,6 +35,7 @@ export async function GET() {
     const settings = await getUserSettings({ userId: session.user.id });
 
     return Response.json({
+      roleType: settings?.roleType || 'coach',
       googleSheetsUrl: settings?.googleSheetsUrl || '',
       googleDriveFolderUrl: settings?.googleDriveFolderUrl || '',
       curriculumEurekaMath: settings?.curriculumEurekaMath || false,
@@ -57,6 +59,7 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     const {
+      roleType,
       googleSheetsUrl,
       googleDriveFolderUrl,
       curriculumEurekaMath,
@@ -66,6 +69,7 @@ export async function POST(request: Request) {
 
     await saveUserSettings({
       userId: session.user.id,
+      roleType,
       googleSheetsUrl: googleSheetsUrl === '' ? undefined : googleSheetsUrl,
       googleDriveFolderUrl:
         googleDriveFolderUrl === '' ? undefined : googleDriveFolderUrl,

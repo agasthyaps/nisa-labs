@@ -15,6 +15,7 @@ import {
   getStreamIdsByChatId,
   saveChat,
   saveMessages,
+  getUserSettings,
 } from '@/lib/db/queries';
 import { generateUUID, getTrailingMessageId } from '@/lib/utils';
 import { generateTitleFromUserMessage } from '../../actions';
@@ -115,6 +116,101 @@ const getNameFromEmail = (email: string | null | undefined): string => {
   // Capitalize first letter
   return cleanName.charAt(0).toUpperCase() + cleanName.slice(1).toLowerCase();
 };
+
+// Role-based tool filtering functions
+function getToolsForRole(
+  role: 'coach' | 'teacher',
+  session: any,
+  dataStream: any,
+  id: string,
+) {
+  const baseTools = {
+    getWeather,
+    createDocument: createDocument({ session, dataStream }),
+    updateDocument: updateDocument({ session, dataStream }),
+    requestSuggestions: requestSuggestions({
+      session,
+      dataStream,
+      sessionId: id,
+    }),
+    listKnowledgeBaseFiles: listKnowledgeBaseFiles({ session }),
+    readKnowledgeBaseFile: readKnowledgeBaseFile({ session }),
+    reviewNotes: reviewNotes({ session }),
+    updateNotes: updateNotes({ session }),
+    getExpertiseTree: getExpertiseTree({ session }),
+    listExpertiseFiles: listExpertiseFiles({ session }),
+    readExpertiseFile: readExpertiseFile({ session }),
+    searchExpertiseContent: searchExpertiseContent({ session }),
+    getExpertiseOverview: getExpertiseOverview({ session }),
+  };
+
+  if (role === 'coach') {
+    return {
+      ...baseTools,
+      readGoogleSheet: readGoogleSheet({ session }),
+      writeGoogleSheet: writeGoogleSheet({ session }),
+      addNewDecisionLog: addNewDecisionLog({ session }),
+      readDecisionLog: readDecisionLog({ session }),
+    };
+  }
+
+  return baseTools; // Teacher gets base tools only (no Google Sheets)
+}
+
+function getActiveToolsForRole(
+  role: 'coach' | 'teacher',
+  selectedChatModel: string,
+): (
+  | 'getWeather'
+  | 'createDocument'
+  | 'updateDocument'
+  | 'requestSuggestions'
+  | 'listKnowledgeBaseFiles'
+  | 'readKnowledgeBaseFile'
+  | 'reviewNotes'
+  | 'updateNotes'
+  | 'getExpertiseTree'
+  | 'listExpertiseFiles'
+  | 'readExpertiseFile'
+  | 'searchExpertiseContent'
+  | 'getExpertiseOverview'
+  | 'readGoogleSheet'
+  | 'writeGoogleSheet'
+  | 'addNewDecisionLog'
+  | 'readDecisionLog'
+)[] {
+  if (selectedChatModel === 'chat-model-reasoning') {
+    return [];
+  }
+
+  const baseActiveTools = [
+    'getWeather',
+    'createDocument',
+    'updateDocument',
+    'requestSuggestions',
+    'listKnowledgeBaseFiles',
+    'readKnowledgeBaseFile',
+    'reviewNotes',
+    'updateNotes',
+    'getExpertiseTree',
+    'listExpertiseFiles',
+    'readExpertiseFile',
+    'searchExpertiseContent',
+    'getExpertiseOverview',
+  ] as const;
+
+  if (role === 'coach') {
+    return [
+      ...baseActiveTools,
+      'readGoogleSheet',
+      'writeGoogleSheet',
+      'addNewDecisionLog',
+      'readDecisionLog',
+    ] as const;
+  }
+
+  return [...baseActiveTools]; // Teacher gets base tools only
+}
 
 export async function POST(request: Request) {
   let requestBody: PostRequestBody;
@@ -499,9 +595,9 @@ export async function POST(request: Request) {
     // Extract user name from email
     const userName = getNameFromEmail(session.user.email);
 
-    // Get user settings for curriculum information
-    const { getUserSettings } = await import('@/lib/db/queries');
+    // Get user settings for curriculum information and role
     const userSettings = await getUserSettings({ userId: session.user.id });
+    const userRole = userSettings?.roleType || 'coach';
 
     const requestHints: RequestHints = {
       longitude,
@@ -587,6 +683,7 @@ export async function POST(request: Request) {
           selectedChatModel,
           requestHints,
           userId: session.user.id,
+          userRole,
         });
 
         // Clear status and start LLM generation
@@ -604,55 +701,10 @@ export async function POST(request: Request) {
           messages,
           maxSteps: 5,
 
-          experimental_activeTools:
-            selectedChatModel === 'chat-model-reasoning'
-              ? []
-              : [
-                  'getWeather',
-                  'createDocument',
-                  'updateDocument',
-                  'requestSuggestions',
-                  'readGoogleSheet',
-                  'writeGoogleSheet',
-                  'addNewDecisionLog',
-                  'readDecisionLog',
-                  'listKnowledgeBaseFiles',
-                  'readKnowledgeBaseFile',
-                  'reviewNotes',
-                  'updateNotes',
-                  'getExpertiseTree',
-                  'listExpertiseFiles',
-                  'readExpertiseFile',
-                  'searchExpertiseContent',
-                  'getExpertiseOverview',
-                  // 'appendGoogleSheet',
-                ],
+          experimental_activeTools: getActiveToolsForRole(userRole, selectedChatModel) as any,
           experimental_transform: smoothStream({ chunking: 'word' }),
           experimental_generateMessageId: generateUUID,
-          tools: {
-            getWeather,
-            createDocument: createDocument({ session, dataStream }),
-            updateDocument: updateDocument({ session, dataStream }),
-            requestSuggestions: requestSuggestions({
-              session,
-              dataStream,
-              sessionId: id, // Pass chat ID as session ID
-            }),
-            readGoogleSheet: readGoogleSheet({ session }),
-            writeGoogleSheet: writeGoogleSheet({ session }),
-            addNewDecisionLog: addNewDecisionLog({ session }),
-            readDecisionLog: readDecisionLog({ session }),
-            listKnowledgeBaseFiles: listKnowledgeBaseFiles({ session }),
-            readKnowledgeBaseFile: readKnowledgeBaseFile({ session }),
-            reviewNotes: reviewNotes({ session }),
-            updateNotes: updateNotes({ session }),
-            getExpertiseTree: getExpertiseTree({ session }),
-            listExpertiseFiles: listExpertiseFiles({ session }),
-            readExpertiseFile: readExpertiseFile({ session }),
-            searchExpertiseContent: searchExpertiseContent({ session }),
-            getExpertiseOverview: getExpertiseOverview({ session }),
-            // appendGoogleSheet: appendGoogleSheet({ session }),
-          },
+          tools: getToolsForRole(userRole, session, dataStream, id),
           onFinish: async ({ response }) => {
             if (session.user?.id) {
               try {

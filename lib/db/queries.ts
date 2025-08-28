@@ -595,6 +595,7 @@ export async function getUserSettings({ userId }: { userId: string }) {
 
 export async function saveUserSettings({
   userId,
+  roleType,
   googleSheetsUrl,
   googleDriveFolderUrl,
   curriculumEurekaMath,
@@ -602,6 +603,7 @@ export async function saveUserSettings({
   curriculumCheckKnowledgeBase,
 }: {
   userId: string;
+  roleType?: 'coach' | 'teacher';
   googleSheetsUrl?: string;
   googleDriveFolderUrl?: string;
   curriculumEurekaMath?: boolean;
@@ -615,6 +617,7 @@ export async function saveUserSettings({
       return await db
         .update(userSettings)
         .set({
+          roleType,
           googleSheetsUrl,
           googleDriveFolderUrl,
           curriculumEurekaMath,
@@ -629,6 +632,7 @@ export async function saveUserSettings({
         .insert(userSettings)
         .values({
           userId,
+          roleType,
           googleSheetsUrl,
           googleDriveFolderUrl,
           curriculumEurekaMath,
