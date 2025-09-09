@@ -391,6 +391,7 @@ async function main() {
     // Process each dataset item
     for (let i = 0; i < dataset.items.length; i++) {
       const item = dataset.items[i] as KBTestItem;
+      const datasetItemAny = dataset.items[i] as any;
       console.log(`\n📋 Processing item ${i + 1}/${dataset.items.length}`);
 
       // Extract ability and expected KB behavior from the dataset structure
@@ -404,16 +405,18 @@ async function main() {
         // Run the actual application
         const [langfuseObject, output] = await runMyLLMApplication(item.input);
 
-        // Link to dataset item
-        await item.link(langfuseObject, runName, {
-          description: 'KB Test Evaluation - Real App Flow',
-          metadata: {
-            model: 'chat-model',
-            ability: ability,
-            expected_kb: expectedKB,
-            timestamp: new Date().toISOString(),
-          },
-        });
+        // Link to dataset item (optional: depends on SDK object shape)
+        if (typeof datasetItemAny?.link === 'function') {
+          await datasetItemAny.link(langfuseObject, runName, {
+            description: 'KB Test Evaluation - Real App Flow',
+            metadata: {
+              model: 'chat-model',
+              ability: ability,
+              expected_kb: expectedKB,
+              timestamp: new Date().toISOString(),
+            },
+          });
+        }
 
         // Calculate and add programmatic scores
         const scores = calculateProgrammaticScores(item, output);

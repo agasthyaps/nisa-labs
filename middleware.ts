@@ -17,8 +17,26 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Allow unauthenticated access to landing, login, and register pages
-  if (['/landing', '/login', '/register'].includes(pathname)) {
+  // Allow unauthenticated access to Mini NISA API for embedded widget
+  if (pathname.startsWith('/api/mini-nisa')) {
+    return NextResponse.next();
+  }
+
+  // Allow unauthenticated access to static demo assets under /mini-nisa/
+  if (pathname.startsWith('/mini-nisa/')) {
+    return NextResponse.next();
+  }
+
+  // Allow unauthenticated access to landing, login, register, embed widget, and local test page
+  if (
+    [
+      '/landing',
+      '/login',
+      '/register',
+      '/embed/mini-nisa',
+      '/mini-nisa-test.html',
+    ].includes(pathname)
+  ) {
     return NextResponse.next();
   }
 

@@ -595,20 +595,20 @@ export async function getUserSettings({ userId }: { userId: string }) {
 
 export async function saveUserSettings({
   userId,
-  roleType,
   googleSheetsUrl,
   googleDriveFolderUrl,
   curriculumEurekaMath,
   curriculumIllustrativeMath,
   curriculumCheckKnowledgeBase,
+  roleType,
 }: {
   userId: string;
-  roleType?: 'coach' | 'teacher';
   googleSheetsUrl?: string;
   googleDriveFolderUrl?: string;
   curriculumEurekaMath?: boolean;
   curriculumIllustrativeMath?: boolean;
   curriculumCheckKnowledgeBase?: boolean;
+  roleType?: 'coach' | 'teacher';
 }) {
   try {
     const existingSettings = await getUserSettings({ userId });
@@ -617,12 +617,12 @@ export async function saveUserSettings({
       return await db
         .update(userSettings)
         .set({
-          roleType,
           googleSheetsUrl,
           googleDriveFolderUrl,
           curriculumEurekaMath,
           curriculumIllustrativeMath,
           curriculumCheckKnowledgeBase,
+          roleType,
           updatedAt: new Date(),
         })
         .where(eq(userSettings.userId, userId))
@@ -632,12 +632,12 @@ export async function saveUserSettings({
         .insert(userSettings)
         .values({
           userId,
-          roleType,
           googleSheetsUrl,
           googleDriveFolderUrl,
           curriculumEurekaMath,
           curriculumIllustrativeMath,
           curriculumCheckKnowledgeBase,
+          roleType,
         })
         .returning();
     }

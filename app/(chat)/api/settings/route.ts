@@ -4,7 +4,6 @@ import { ChatSDKError } from '@/lib/errors';
 import { z } from 'zod';
 
 const settingsSchema = z.object({
-  roleType: z.enum(['coach', 'teacher']).optional(),
   googleSheetsUrl: z
     .string()
     .optional()
@@ -22,6 +21,7 @@ const settingsSchema = z.object({
   curriculumEurekaMath: z.boolean().optional(),
   curriculumIllustrativeMath: z.boolean().optional(),
   curriculumCheckKnowledgeBase: z.boolean().optional(),
+  roleType: z.enum(['coach', 'teacher']).optional(),
 });
 
 export async function GET() {
@@ -35,13 +35,13 @@ export async function GET() {
     const settings = await getUserSettings({ userId: session.user.id });
 
     return Response.json({
-      roleType: settings?.roleType || 'coach',
       googleSheetsUrl: settings?.googleSheetsUrl || '',
       googleDriveFolderUrl: settings?.googleDriveFolderUrl || '',
       curriculumEurekaMath: settings?.curriculumEurekaMath || false,
       curriculumIllustrativeMath: settings?.curriculumIllustrativeMath || false,
       curriculumCheckKnowledgeBase:
         settings?.curriculumCheckKnowledgeBase || false,
+      roleType: settings?.roleType || 'coach',
     });
   } catch (error) {
     console.error('Error getting settings:', error);
@@ -59,23 +59,23 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     const {
-      roleType,
       googleSheetsUrl,
       googleDriveFolderUrl,
       curriculumEurekaMath,
       curriculumIllustrativeMath,
       curriculumCheckKnowledgeBase,
+      roleType,
     } = settingsSchema.parse(body);
 
     await saveUserSettings({
       userId: session.user.id,
-      roleType,
       googleSheetsUrl: googleSheetsUrl === '' ? undefined : googleSheetsUrl,
       googleDriveFolderUrl:
         googleDriveFolderUrl === '' ? undefined : googleDriveFolderUrl,
       curriculumEurekaMath,
       curriculumIllustrativeMath,
       curriculumCheckKnowledgeBase,
+      roleType,
     });
 
     return Response.json({ success: true });

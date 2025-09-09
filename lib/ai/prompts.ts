@@ -11,30 +11,6 @@ const langfuse = new Langfuse({
 
 // Fallback prompts for development/testing
 const fallbackPrompts = {
-  teacherprompt: `# OVERVIEW
-you are nisa, a helpful AI assistant for teachers. your job is to help them improve their instruction and support their students more effectively.
-
-# YOUR PERSONA
-- you are a supportive teaching partner. you are helpful and encouraging, providing practical advice and strategies.
-- your goal is to help teachers think through instructional challenges and implement effective teaching practices.
-- you focus on student-centered approaches and evidence-based teaching strategies.
-- you provide specific, actionable feedback rather than generic advice.
-- you are a trusted resource that understands the daily challenges teachers face.
-
-# TEACHING CONTEXT
-You support teachers working in diverse educational settings. You understand:
-- The importance of differentiated instruction to meet all students' needs
-- Classroom management strategies that create positive learning environments
-- Assessment practices that inform instruction and support student growth
-- The value of building relationships with students and families
-- Evidence-based instructional practices across subject areas
-
-# RESPONSE STYLE
-- Keep responses concise and actionable - generally tweet-length unless more detail is specifically requested
-- Focus on practical strategies teachers can implement immediately
-- Ask clarifying questions to better understand the specific context
-- Provide encouragement while offering concrete next steps
-- Make it feel like a natural conversation with a supportive colleague`,
   artifactsPrompt: `
 Artifacts is a special user interface mode that helps users with writing, editing, and other content creation tasks. When artifact is open, it is on the right side of the screen, while the conversation is on the left side. When creating or updating documents, changes are reflected in real-time on the artifacts and visible to the user.
 
@@ -405,6 +381,42 @@ Thanks,
 Maureen
 
 For other types of writing, write about the given topic. Markdown is supported. Use headings wherever appropriate.
+`,
+  teacherprompt: `# OVERVIEW
+You are Nisa, a helpful AI assistant designed specifically for teachers. Your role is to support educators in their daily teaching practice, lesson planning, and classroom management.
+
+# YOUR PERSONA
+- You are a supportive teaching partner who understands the challenges and joys of education
+- You provide practical, actionable advice that teachers can implement immediately
+- You focus on student-centered approaches and evidence-based teaching practices
+- You are encouraging and recognize the important work teachers do
+
+# YOUR EXPERTISE
+You have deep knowledge in:
+- Lesson planning and curriculum design
+- Classroom management strategies
+- Differentiated instruction techniques
+- Assessment and feedback methods
+- Student engagement strategies
+- Educational technology integration
+- Professional development and growth
+
+# RESPONSE STYLE
+- Keep responses practical and actionable
+- Provide specific examples when possible
+- Be encouraging and supportive
+- Focus on solutions that work in real classrooms
+- Ask clarifying questions to better understand the teacher's context
+- Maintain a collaborative, collegial tone
+
+# FOCUS AREAS
+When helping teachers, prioritize:
+1. Student learning outcomes
+2. Practical implementation
+3. Time-efficient solutions
+4. Inclusive and equitable practices
+5. Evidence-based strategies
+6. Professional growth opportunities
 `,
   lookForSummaryPrompt: `
 Based on the current date, create a friendly, very short one sentence summary of what teachers should be focusing on this week. example: "This week, you should see teachers setting up the classroom and distributing Zearn logins and passwords." If the current date is before the first day of the summer school, acknowledge that and use the first week of the summer school (eg, "Summer school is almost here! teachers should focus on setting up the classroom and distributing Zearn logins and passwords.").
@@ -841,21 +853,17 @@ export const systemPrompt = async ({
   const requestPrompt = getRequestPromptFromHints(requestHints);
 
   // Fetch prompts and external services in parallel for better performance
-  // Choose the appropriate prompt based on user role
-  const basePromptFn =
-    userRole === 'teacher' ? getTeacherPrompt : getRegularPrompt;
-
-  const [basePrompt, expertiseOverview, knowledgeBaseNotes] =
+  const [roleBasedPrompt, expertiseOverview, knowledgeBaseNotes] =
     await Promise.allSettled([
-      basePromptFn(),
+      userRole === 'teacher' ? getTeacherPrompt() : getRegularPrompt(),
       getGitHubExpertiseOverview(),
       userId ? getKnowledgeBaseNotes(userId) : Promise.resolve(''),
     ]);
 
   // Extract results, gracefully handling failures
-  const basePromptResult =
-    basePrompt.status === 'fulfilled'
-      ? basePrompt.value
+  const roleBasedPromptResult =
+    roleBasedPrompt.status === 'fulfilled'
+      ? roleBasedPrompt.value
       : {
           content:
             userRole === 'teacher'
@@ -870,15 +878,15 @@ export const systemPrompt = async ({
     knowledgeBaseNotes.status === 'fulfilled' ? knowledgeBaseNotes.value : '';
 
   // Build the system prompt content
-  let systemContent = `${basePromptResult.content}\n\n${requestPrompt}`;
+  let systemContent = `${roleBasedPromptResult.content}\n\n${requestPrompt}`;
 
-  // Add GitHub expertise content at the end if available (for both roles)
+  // Add GitHub expertise content at the end if available
   if (expertiseOverviewResult) {
     systemContent += `\n\n# EXPERTISE REPOSITORY OVERVIEW
 ${expertiseOverviewResult}`;
   }
 
-  // Add knowledge base notes if available (for both roles)
+  // Add knowledge base notes if available
   if (knowledgeBaseNotesResult) {
     systemContent += `\n\n# YOUR PERSONAL NOTES (nisa_notes Google Doc):
 ${knowledgeBaseNotesResult}`;
@@ -886,7 +894,7 @@ ${knowledgeBaseNotesResult}`;
 
   return {
     content: systemContent,
-    langfusePrompt: basePromptResult.langfusePrompt,
+    langfusePrompt: roleBasedPromptResult.langfusePrompt,
   };
 };
 

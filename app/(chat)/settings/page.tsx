@@ -20,7 +20,6 @@ import { ArrowLeft, Beaker } from 'lucide-react';
 export default function SettingsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [roleType, setRoleType] = useState<'coach' | 'teacher'>('coach');
   const [googleSheetsUrl, setGoogleSheetsUrl] = useState('');
   const [googleDriveFolderUrl, setGoogleDriveFolderUrl] = useState('');
   const [curriculumEurekaMath, setCurriculumEurekaMath] = useState(false);
@@ -28,6 +27,7 @@ export default function SettingsPage() {
     useState(false);
   const [curriculumCheckKnowledgeBase, setCurriculumCheckKnowledgeBase] =
     useState(false);
+  const [roleType, setRoleType] = useState<'coach' | 'teacher'>('coach');
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -43,7 +43,6 @@ export default function SettingsPage() {
       const response = await fetch('/api/settings');
       if (response.ok) {
         const settings = await response.json();
-        setRoleType(settings.roleType || 'coach');
         setGoogleSheetsUrl(settings.googleSheetsUrl || '');
         setGoogleDriveFolderUrl(settings.googleDriveFolderUrl || '');
         setCurriculumEurekaMath(settings.curriculumEurekaMath || false);
@@ -53,6 +52,7 @@ export default function SettingsPage() {
         setCurriculumCheckKnowledgeBase(
           settings.curriculumCheckKnowledgeBase || false,
         );
+        setRoleType(settings.roleType || 'coach');
       }
     } catch (error) {
       console.error('Failed to load settings:', error);
@@ -82,12 +82,12 @@ export default function SettingsPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          roleType,
           googleSheetsUrl,
           googleDriveFolderUrl,
           curriculumEurekaMath,
           curriculumIllustrativeMath,
           curriculumCheckKnowledgeBase,
+          roleType,
         }),
       });
 
@@ -159,9 +159,10 @@ export default function SettingsPage() {
 
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Role Selection</CardTitle>
+            <CardTitle>Role Type</CardTitle>
             <CardDescription>
-              Choose your role to customize the AI assistant's behavior and available tools.
+              Choose your role to customize the assistant&apos;s behavior and
+              available tools.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -171,12 +172,16 @@ export default function SettingsPage() {
                   type="radio"
                   id="roleCoach"
                   name="roleType"
+                  value="coach"
                   checked={roleType === 'coach'}
-                  onChange={() => setRoleType('coach')}
+                  onChange={(e) =>
+                    setRoleType(e.target.value as 'coach' | 'teacher')
+                  }
                   className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
                 <Label htmlFor="roleCoach" className="text-sm font-normal">
-                  <strong>Coach</strong> - Full access to all tools including Google Sheets integration for decision logging and data analysis
+                  <strong>Coach</strong> - Full access to all tools including
+                  Google Sheets integration for coaching action plans
                 </Label>
               </div>
 
@@ -185,12 +190,16 @@ export default function SettingsPage() {
                   type="radio"
                   id="roleTeacher"
                   name="roleType"
+                  value="teacher"
                   checked={roleType === 'teacher'}
-                  onChange={() => setRoleType('teacher')}
+                  onChange={(e) =>
+                    setRoleType(e.target.value as 'coach' | 'teacher')
+                  }
                   className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
                 <Label htmlFor="roleTeacher" className="text-sm font-normal">
-                  <strong>Teacher</strong> - Focused on instructional support with teacher-specific guidance and resources
+                  <strong>Teacher</strong> - Teaching-focused assistance with
+                  specialized prompts (no Google Sheets access)
                 </Label>
               </div>
             </div>

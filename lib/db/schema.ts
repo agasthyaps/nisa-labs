@@ -176,9 +176,6 @@ export const userSettings = pgTable(
     userId: uuid('userId')
       .notNull()
       .references(() => user.id),
-    roleType: varchar('roleType', { enum: ['coach', 'teacher'] })
-      .notNull()
-      .default('coach'),
     googleSheetsUrl: text('googleSheetsUrl'),
     googleDriveFolderUrl: text('googleDriveFolderUrl'),
     curriculumEurekaMath: boolean('curriculumEurekaMath').default(false),
@@ -188,6 +185,9 @@ export const userSettings = pgTable(
     curriculumCheckKnowledgeBase: boolean(
       'curriculumCheckKnowledgeBase',
     ).default(false),
+    roleType: varchar('roleType', { enum: ['coach', 'teacher'] })
+      .notNull()
+      .default('coach'),
     createdAt: timestamp('createdAt').notNull().defaultNow(),
     updatedAt: timestamp('updatedAt').notNull().defaultNow(),
   },
