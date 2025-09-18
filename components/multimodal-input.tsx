@@ -28,6 +28,7 @@ import { ArrowDown } from 'lucide-react';
 import { useScrollToBottom } from '@/hooks/use-scroll-to-bottom';
 import type { VisibilityType } from './visibility-selector';
 import { ImageProcessingMessage } from './image-processing-message';
+import { GenerateReportDialog } from './generate-report-dialog';
 
 function PureMultimodalInput({
   chatId,
@@ -353,6 +354,7 @@ function PureMultimodalInput({
             isProcessingFiles={isProcessingFiles}
           />
         )}
+        <GenerateReportDialog chatId={chatId} disabled={status !== 'ready' || isProcessingFiles} />
       </div>
     </div>
   );

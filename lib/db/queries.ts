@@ -28,6 +28,7 @@ import {
   type Chat,
   stream,
   userSettings,
+  report,
 } from './schema';
 import type { ArtifactKind } from '@/components/artifact';
 import { generateUUID } from '../utils';
@@ -641,6 +642,50 @@ export async function saveUserSettings({
     throw new ChatSDKError(
       'bad_request:database',
       'Failed to save user settings',
+    );
+  }
+}
+
+export async function saveReport({
+  chatId,
+  userId,
+  data,
+  guidance,
+}: {
+  chatId: string;
+  userId: string;
+  data: unknown;
+  guidance?: string;
+}) {
+  try {
+    return await db
+      .insert(report)
+      .values({
+        id: generateUUID(),
+        chatId,
+        userId,
+        guidance,
+        data,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+  } catch (error) {
+    throw new ChatSDKError('bad_request:database', 'Failed to save report');
+  }
+}
+
+export async function getReportsByChatId({
+  chatId,
+}: {
+  chatId: string;
+}) {
+  try {
+    return await db.select().from(report).where(eq(report.chatId, chatId));
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to get reports by chat id',
     );
   }
 }

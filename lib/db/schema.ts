@@ -197,3 +197,20 @@ export const userSettings = pgTable(
 );
 
 export type UserSettings = InferSelectModel<typeof userSettings>;
+
+// Report table to store generated conversation reports
+export const report = pgTable('Report', {
+  id: uuid('id').primaryKey().notNull().defaultRandom(),
+  chatId: uuid('chatId')
+    .notNull()
+    .references(() => chat.id),
+  userId: uuid('userId')
+    .notNull()
+    .references(() => user.id),
+  guidance: text('guidance'),
+  data: json('data').notNull(),
+  createdAt: timestamp('createdAt').notNull(),
+  updatedAt: timestamp('updatedAt').notNull(),
+});
+
+export type Report = InferSelectModel<typeof report>;
