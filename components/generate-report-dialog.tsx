@@ -87,7 +87,7 @@ export function GenerateReportDialog({ chatId, disabled }: { chatId: string; dis
   return (
     <AlertDialog open={open} onOpenChange={handleOpenChange}>
       <AlertDialogTrigger asChild>
-        <Button disabled={disabled} variant="secondary">Generate report</Button>
+        <Button type="button" disabled={disabled} variant="secondary">Generate report</Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
