@@ -91,7 +91,7 @@ const mockSession = {
   },
 };
 
-interface KBTestItem {
+interface KBTestItemData {
   input: {
     ability: number;
     context: string;
@@ -278,7 +278,7 @@ async function runMyLLMApplication(input: any): Promise<[any, any]> {
 }
 
 // Evaluation functions
-function calculateProgrammaticScores(item: KBTestItem, output: any) {
+function calculateProgrammaticScores(item: KBTestItemData, output: any) {
   const scores: Record<string, { value: number; comment: string }> = {};
 
   // Extract ability from input structure
@@ -390,19 +390,21 @@ async function main() {
 
     // Process each dataset item
     for (let i = 0; i < dataset.items.length; i++) {
-      const item = dataset.items[i] as KBTestItem;
+      const item = dataset.items[i];
       console.log(`\n📋 Processing item ${i + 1}/${dataset.items.length}`);
 
       // Extract ability and expected KB behavior from the dataset structure
-      const ability = item.input?.ability || item.input;
-      const expectedKB =
-        item.expectedOutput?.['expected_output.kb_expectation'];
+      const inputData = item.input as KBTestItemData['input'];
+      const expectedOutputData =
+        item.expectedOutput as KBTestItemData['expectedOutput'];
+      const ability = inputData?.ability || inputData;
+      const expectedKB = expectedOutputData?.['expected_output.kb_expectation'];
 
       console.log(`   Ability: ${ability} | Expected KB: ${expectedKB}`);
 
       try {
         // Run the actual application
-        const [langfuseObject, output] = await runMyLLMApplication(item.input);
+        const [langfuseObject, output] = await runMyLLMApplication(inputData);
 
         // Link to dataset item
         await item.link(langfuseObject, runName, {
@@ -416,7 +418,12 @@ async function main() {
         });
 
         // Calculate and add programmatic scores
-        const scores = calculateProgrammaticScores(item, output);
+        const itemData: KBTestItemData = {
+          input: inputData,
+          expectedOutput: expectedOutputData,
+          metadata: item.metadata,
+        };
+        const scores = calculateProgrammaticScores(itemData, output);
 
         for (const [scoreName, scoreData] of Object.entries(scores)) {
           langfuseObject.score({
