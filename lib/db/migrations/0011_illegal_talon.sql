@@ -1,11 +1,11 @@
 CREATE TABLE IF NOT EXISTS "Report" (
-  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-  "chatId" uuid NOT NULL,
-  "userId" uuid NOT NULL,
-  "guidance" text,
-  "data" json NOT NULL,
-  "createdAt" timestamp NOT NULL,
-  "updatedAt" timestamp NOT NULL
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"chatId" uuid NOT NULL,
+	"userId" uuid NOT NULL,
+	"guidance" text,
+	"data" json NOT NULL,
+	"createdAt" timestamp NOT NULL,
+	"updatedAt" timestamp NOT NULL
 );
 --> statement-breakpoint
 DO $$ BEGIN
@@ -19,5 +19,3 @@ DO $$ BEGIN
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
-
-
