@@ -2,7 +2,7 @@
 
 import type { Attachment, UIMessage } from 'ai';
 import { useChat } from '@ai-sdk/react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
 import { ChatHeader } from '@/components/chat-header';
 import type { Vote } from '@/lib/db/schema';
@@ -20,6 +20,34 @@ import { useSearchParams } from 'next/navigation';
 import { useChatVisibility } from '@/hooks/use-chat-visibility';
 import { useAutoResume } from '@/hooks/use-auto-resume';
 import { ChatSDKError } from '@/lib/errors';
+import {
+  type ConversationMode,
+  isOnboardingStarter,
+} from '@/lib/chat/conversation-mode';
+
+const detectConversationMode = (
+  messages: Array<UIMessage>,
+): ConversationMode => {
+  for (const message of messages) {
+    if (message.role !== 'user') continue;
+
+    if (typeof message.content === 'string' && message.content.length > 0) {
+      if (isOnboardingStarter(message.content)) {
+        return 'onboarding';
+      }
+    }
+
+    if (Array.isArray(message.parts)) {
+      for (const part of message.parts) {
+        if (part?.type === 'text' && isOnboardingStarter(part.text)) {
+          return 'onboarding';
+        }
+      }
+    }
+  }
+
+  return 'default';
+};
 
 export function Chat({
   id,
@@ -45,6 +73,29 @@ export function Chat({
     initialVisibilityType,
   });
 
+  const initialConversationMode = useMemo(
+    () => detectConversationMode(initialMessages),
+    [initialMessages],
+  );
+
+  const conversationModeRef = useRef<ConversationMode>(initialConversationMode);
+  const [, setConversationModeState] = useState<ConversationMode>(
+    initialConversationMode,
+  );
+
+  useEffect(() => {
+    const nextMode = detectConversationMode(initialMessages);
+    if (conversationModeRef.current !== nextMode) {
+      conversationModeRef.current = nextMode;
+      setConversationModeState(nextMode);
+    }
+  }, [initialMessages]);
+
+  const setConversationMode = useCallback((mode: ConversationMode) => {
+    conversationModeRef.current = mode;
+    setConversationModeState(mode);
+  }, []);
+
   const {
     messages,
     setMessages,
@@ -69,6 +120,7 @@ export function Chat({
       message: body.messages.at(-1),
       selectedChatModel: initialChatModel,
       selectedVisibilityType: visibilityType,
+      conversationMode: conversationModeRef.current,
     }),
     onFinish: () => {
       mutate(unstable_serialize(getChatHistoryPaginationKey));
@@ -179,20 +231,21 @@ export function Chat({
 
         <form className="flex mx-auto px-4 bg-background pb-4 md:pb-6 gap-2 w-full md:max-w-3xl">
           {!isReadonly && (
-            <MultimodalInput
-              chatId={id}
-              input={input}
-              setInput={setInput}
-              handleSubmit={handleSubmit}
-              status={status}
-              stop={stop}
-              attachments={attachments}
-              setAttachments={setAttachments}
-              messages={messages}
-              setMessages={setMessages}
-              append={append}
-              selectedVisibilityType={visibilityType}
-            />
+          <MultimodalInput
+            chatId={id}
+            input={input}
+            setInput={setInput}
+            handleSubmit={handleSubmit}
+            status={status}
+            stop={stop}
+            attachments={attachments}
+            setAttachments={setAttachments}
+            messages={messages}
+            setMessages={setMessages}
+            append={append}
+            selectedVisibilityType={visibilityType}
+            onConversationModeChange={setConversationMode}
+          />
           )}
         </form>
       </div>
@@ -213,6 +266,7 @@ export function Chat({
         votes={votes}
         isReadonly={isReadonly}
         selectedVisibilityType={visibilityType}
+        onConversationModeChange={setConversationMode}
       />
     </>
   );

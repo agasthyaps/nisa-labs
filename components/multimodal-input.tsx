@@ -29,6 +29,7 @@ import { useScrollToBottom } from '@/hooks/use-scroll-to-bottom';
 import type { VisibilityType } from './visibility-selector';
 import { ImageProcessingMessage } from './image-processing-message';
 import { GenerateReportDialog } from './generate-report-dialog';
+import type { ConversationMode } from '@/lib/chat/conversation-mode';
 
 function PureMultimodalInput({
   chatId,
@@ -44,6 +45,7 @@ function PureMultimodalInput({
   handleSubmit,
   className,
   selectedVisibilityType,
+  onConversationModeChange,
 }: {
   chatId: string;
   input: UseChatHelpers['input'];
@@ -58,6 +60,7 @@ function PureMultimodalInput({
   handleSubmit: UseChatHelpers['handleSubmit'];
   className?: string;
   selectedVisibilityType: VisibilityType;
+  onConversationModeChange: (mode: ConversationMode) => void;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { width } = useWindowSize();
@@ -274,6 +277,7 @@ function PureMultimodalInput({
             append={append}
             chatId={chatId}
             selectedVisibilityType={selectedVisibilityType}
+            onConversationModeChange={onConversationModeChange}
           />
         )}
 

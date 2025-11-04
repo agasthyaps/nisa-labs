@@ -75,6 +75,10 @@ import {
   searchExpertiseContent,
   getExpertiseOverview,
 } from '@/lib/ai/tools/github-expertise';
+import {
+  type ConversationMode,
+  isOnboardingStarter,
+} from '@/lib/chat/conversation-mode';
 
 export const maxDuration = 60;
 
@@ -116,6 +120,53 @@ const getNameFromEmail = (email: string | null | undefined): string => {
   return cleanName.charAt(0).toUpperCase() + cleanName.slice(1).toLowerCase();
 };
 
+const collectCandidateTexts = (message: any): Array<string> => {
+  const texts: Array<string> = [];
+
+  const appendText = (value: unknown) => {
+    if (typeof value === 'string' && value.length > 0) {
+      texts.push(value);
+    }
+  };
+
+  appendText(message?.content);
+
+  if (Array.isArray(message?.content)) {
+    for (const item of message.content) {
+      if (typeof item === 'string') {
+        appendText(item);
+      } else if (item && typeof item === 'object' && 'text' in item) {
+        appendText((item as { text?: unknown }).text);
+      }
+    }
+  }
+
+  if (Array.isArray(message?.parts)) {
+    for (const part of message.parts) {
+      if (part && typeof part === 'object' && part.type === 'text') {
+        appendText((part as { text?: unknown }).text);
+      }
+    }
+  }
+
+  return texts;
+};
+
+const detectConversationModeFromMessages = (
+  messages: Array<any>,
+): ConversationMode => {
+  for (const message of messages) {
+    if (message?.role !== 'user') continue;
+
+    const candidateTexts = collectCandidateTexts(message);
+    if (candidateTexts.some((text) => isOnboardingStarter(text))) {
+      return 'onboarding';
+    }
+  }
+
+  return 'default';
+};
+
 export async function POST(request: Request) {
   let requestBody: PostRequestBody;
 
@@ -127,8 +178,13 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { id, message, selectedChatModel, selectedVisibilityType } =
-      requestBody;
+    const {
+      id,
+      message,
+      selectedChatModel,
+      selectedVisibilityType,
+      conversationMode: providedConversationMode,
+    } = requestBody;
 
     const session = await auth();
 
@@ -479,6 +535,9 @@ export async function POST(request: Request) {
       message: messageWithTranscription,
     });
 
+    const conversationMode =
+      providedConversationMode ?? detectConversationModeFromMessages(messages);
+
     const { longitude, latitude, city, country } = geolocation(request);
 
     // Get current date and time
@@ -587,6 +646,7 @@ export async function POST(request: Request) {
           selectedChatModel,
           requestHints,
           userId: session.user.id,
+          conversationMode,
         });
 
         // Clear status and start LLM generation
@@ -703,6 +763,7 @@ export async function POST(request: Request) {
               selectedChatModel,
               chatId: id,
               chat_visibility: selectedVisibilityType,
+              conversation_mode: conversationMode,
             },
           },
         });
@@ -728,9 +789,13 @@ export async function POST(request: Request) {
       return new Response(stream);
     }
   } catch (error) {
+    console.error('chat api handler failed', error);
+
     if (error instanceof ChatSDKError) {
       return error.toResponse();
     }
+
+    return new ChatSDKError('offline:chat').toResponse();
   }
 }
 

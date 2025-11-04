@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CONVERSATION_MODES } from '@/lib/chat/conversation-mode';
 
 const textPartSchema = z.object({
   text: z.string().min(1).max(2000),
@@ -42,6 +43,7 @@ export const postRequestBodySchema = z.object({
   }),
   selectedChatModel: z.enum(['chat-model', 'chat-model-reasoning']),
   selectedVisibilityType: z.enum(['public', 'private']),
+  conversationMode: z.enum(CONVERSATION_MODES).optional(),
 });
 
 export type PostRequestBody = z.infer<typeof postRequestBodySchema>;

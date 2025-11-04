@@ -1,6 +1,7 @@
 import type { ArtifactKind } from '@/components/artifact';
 import type { Geo } from '@vercel/functions';
 import { Langfuse } from 'langfuse';
+import type { ConversationMode } from '@/lib/chat/conversation-mode';
 
 // Langfuse client for prompt fetching
 const langfuse = new Langfuse({
@@ -798,10 +799,12 @@ export const systemPrompt = async ({
   selectedChatModel,
   requestHints,
   userId,
+  conversationMode = 'default',
 }: {
   selectedChatModel: string;
   requestHints: RequestHints;
   userId?: string;
+  conversationMode?: ConversationMode;
 }) => {
   const requestPrompt = getRequestPromptFromHints(requestHints);
 
@@ -840,6 +843,13 @@ ${expertiseOverviewResult}`;
   if (knowledgeBaseNotesResult) {
     systemContent += `\n\n# YOUR PERSONAL NOTES (nisa_notes Google Doc):
 ${knowledgeBaseNotesResult}`;
+  }
+
+  if (conversationMode === 'onboarding') {
+    systemContent += `\n\n# ONBOARDING MODE DIRECTIVES
+- Placeholder: Describe the onboarding goal, the key steps, and the tone to maintain.
+- Placeholder: Outline the information the assistant should gather or present during this mock onboarding flow.
+- Placeholder: Provide any additional context or constraints that apply while onboarding is active.`;
   }
 
   return {

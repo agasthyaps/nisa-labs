@@ -5,39 +5,54 @@ import { Button } from './ui/button';
 import { memo } from 'react';
 import type { UseChatHelpers } from '@ai-sdk/react';
 import type { VisibilityType } from './visibility-selector';
+import {
+  type ConversationMode,
+  ONBOARDING_TRIGGER_PREFIX,
+} from '@/lib/chat/conversation-mode';
 
 interface SuggestedActionsProps {
   chatId: string;
   append: UseChatHelpers['append'];
   selectedVisibilityType: VisibilityType;
+  onConversationModeChange: (mode: ConversationMode) => void;
 }
 
 function PureSuggestedActions({
   chatId,
   append,
   selectedVisibilityType,
+  onConversationModeChange,
 }: SuggestedActionsProps) {
-  const suggestedActions = [
+  const suggestedActions: Array<{
+    title: string;
+    label: string;
+    action: string;
+    mode: ConversationMode;
+  }> = [
     {
       title: 'Uncover insights',
       label: "about a trend I haven't noticed",
       action:
         'Use your expertise and the tools available to you to uncover insights or surface something interesting or useful that I might not have noticed myself.',
+      mode: 'default',
     },
     {
       title: 'Help me plan a debrief',
       label: `for a teacher.`,
       action: `Help me plan a debrief for a teacher based on what you know about them.`,
+      mode: 'default',
     },
     {
       title: 'Write a follow-up email',
       label: `to a teacher based on our last conversation.`,
       action: `Write a follow-up email to a teacher based on our last conversation.`,
+      mode: 'default',
     },
     {
-      title: 'Update my coaching log',
-      label: 'based on my observation notes.',
-      action: 'Update my coaching log based on my observation notes',
+      title: 'Mock onboarding',
+      label: 'to practice the walkthrough.',
+      action: `${ONBOARDING_TRIGGER_PREFIX}. Kick things off by welcoming me and outlining the mock onboarding flow you will guide me through.`,
+      mode: 'onboarding',
     },
   ];
 
@@ -59,6 +74,7 @@ function PureSuggestedActions({
             variant="ghost"
             onClick={async () => {
               window.history.replaceState({}, '', `/chat/${chatId}`);
+              onConversationModeChange(suggestedAction.mode);
 
               append({
                 role: 'user',
