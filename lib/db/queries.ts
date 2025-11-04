@@ -40,8 +40,30 @@ import { ChatSDKError } from '../errors';
 // use the Drizzle adapter for Auth.js / NextAuth
 // https://authjs.dev/reference/adapter/drizzle
 
-// biome-ignore lint: Forbidden non-null assertion.
-const client = postgres(process.env.POSTGRES_URL!);
+type PostgresClient = ReturnType<typeof postgres>;
+
+declare global {
+  // eslint-disable-next-line no-var
+  var postgresClient: PostgresClient | undefined;
+}
+
+const connectionString = process.env.POSTGRES_URL;
+
+if (!connectionString) {
+  throw new Error('POSTGRES_URL is not defined');
+}
+
+const client: PostgresClient =
+  globalThis.postgresClient ??
+  postgres(connectionString, {
+    max: 1,
+    idle_timeout: 20,
+    connect_timeout: 30,
+    prepare: false,
+  });
+
+globalThis.postgresClient = client;
+
 const db = drizzle(client);
 
 export async function getUser(email: string): Promise<Array<User>> {
